@@ -1,4 +1,4 @@
-package org.example.config;
+package com.ahmet.tpm.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -54,14 +54,12 @@ public class DatabaseConfig {
     }
 
     //close pool
-
     public static void closeConnection() {
         if (dataSource != null) {
             dataSource.close();
         }
     }
 
-    private DatabaseConfig() {
-    }
+    private DatabaseConfig() {}
 
 }
