@@ -7,7 +7,7 @@ public class Project {
     private int projectId;
     private String projectName;
     private String description;
-    private LocalDateTime projectStartDate;
+    private LocalDateTime startDate;
     private LocalDateTime deadline;
     private Integer statusId;
     private Integer departmentId;
@@ -18,11 +18,11 @@ public class Project {
     public Project() {
     }
 
-    public Project(int projectId, String projectName, String description, LocalDateTime projectStartDate, LocalDateTime deadline, Integer statusId, Integer createdBy, Integer departmentId, LocalDateTime createdAt) {
+    public Project(int projectId, String projectName, String description, LocalDateTime startDate, LocalDateTime deadline, Integer statusId, Integer createdBy, Integer departmentId, LocalDateTime createdAt) {
         this.projectId = projectId;
         this.projectName = projectName;
         this.description = description;
-        this.projectStartDate = projectStartDate;
+        this.startDate = startDate;
         this.deadline = deadline;
         this.statusId = statusId;
         this.createdBy = createdBy;
@@ -30,10 +30,10 @@ public class Project {
         this.createdAt = createdAt;
     }
 
-    public Project(String projectName,String description,LocalDateTime projectStartDate, LocalDateTime deadline, Integer statusId, Integer departmentId, Integer createdBy) {
+    public Project(String projectName,String description,LocalDateTime startDate, LocalDateTime deadline, Integer statusId, Integer departmentId, Integer createdBy) {
         this.projectName = projectName;
         this.description = description;
-        this.projectStartDate = projectStartDate;
+        this.startDate = startDate;
         this.deadline = deadline;
         this.statusId = 1;// default 1 = planning
         this.departmentId = departmentId;
@@ -64,12 +64,12 @@ public class Project {
         this.description = description;
     }
 
-    public LocalDateTime getProjectStartDate() {
-        return projectStartDate;
+    public LocalDateTime getStartDate() {
+        return startDate;
     }
 
-    public void setProjectStartDate(LocalDateTime projectStartDate) {
-        this.projectStartDate = projectStartDate;
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate;
     }
 
     public LocalDateTime getDeadline() {

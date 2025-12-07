@@ -17,7 +17,7 @@ public class ProjectDao {
                 rs.getInt("project_id"),
                 rs.getString("project_name"),
                 rs.getString("description"),
-                rs.getTimestamp("project_start_date").toLocalDateTime(),
+                rs.getTimestamp("start_date").toLocalDateTime(),
                 rs.getTimestamp("deadline").toLocalDateTime(),
                 rs.getInt("status_id"),
                 rs.getInt("department_id"),
@@ -251,6 +251,82 @@ public class ProjectDao {
             System.err.println("Error updating project status: " + e.getMessage());
         }
     }
+
+
+    public void delete(int projectId) {
+        String sql = """
+            DELETE FROM Projects
+            WHERE project_id = ?
+            """;
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, projectId);
+            int rowsDeleted = stmt.executeUpdate();
+
+            if (rowsDeleted > 0) {
+                System.out.println("✓ Project deleted successfully!");
+            } else {
+                System.out.println("⚠ No project found with ID: " + projectId);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("  SQL State: " + e.getSQLState());
+            System.err.println("  Error Code: " + e.getErrorCode());
+            System.err.println("✗ Error deleting project: " + e.getMessage());
+            System.err.println("  Note: Cannot delete project if it has dependencies");
+        }
+    }
+    public void update(Project project) {
+        String sql = """
+            UPDATE Projects
+            SET project_name = ?,
+                description = ?,
+                start_date = ?,
+                deadline = ?,
+                status_id = ?,
+                department_id = ?
+            WHERE project_id = ?
+            """;
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, project.getProjectName());
+            stmt.setString(2, project.getDescription());
+            stmt.setTimestamp(3, project.getStartDate() != null ?
+                    Timestamp.valueOf(project.getStartDate()) : null);
+            stmt.setTimestamp(4, project.getDeadline() != null ?
+                    Timestamp.valueOf(project.getDeadline()) : null);
+            stmt.setInt(5, project.getStatusId());
+
+            if (project.getDepartmentId() != null) {
+                stmt.setInt(6, project.getDepartmentId());
+            } else {
+                stmt.setNull(6, Types.INTEGER);
+            }
+
+            stmt.setInt(7, project.getProjectId());
+
+            int rowsUpdated = stmt.executeUpdate();
+
+            if (rowsUpdated > 0) {
+                System.out.println("✓ Project updated successfully!");
+            } else {
+                System.out.println("⚠ No project found with ID: " + project.getProjectId());
+            }
+
+        } catch (SQLException e) {
+            System.err.println("  SQL State: " + e.getSQLState());
+            System.err.println("  Error Code: " + e.getErrorCode());
+            System.err.println("✗ Error updating project: " + e.getMessage());
+        }
+    }
+
+
+
+
 
 
 

@@ -499,6 +499,26 @@ public class TaskDao {
         return 0;
     }
 
+    public int countByProjectAndStatus(int projectId, int statusId) {
+        String sql = "SELECT COUNT(*) FROM Tasks WHERE project_id = ? AND status_id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, projectId);
+            stmt.setInt(2, statusId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("✗ Error counting tasks by project and status: " + e.getMessage());
+        }
+        return 0;
+    }
+
     public boolean exists(int id) {
         String sql = "SELECT 1 FROM Tasks WHERE task_id = ?";
 
