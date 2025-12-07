@@ -1,5 +1,6 @@
 package com.ahmet.tpm.models;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class Task {
@@ -11,13 +12,14 @@ public class Task {
     private Integer statusId;
     private Integer priorityId;
     private double estimatedHours;
+    private LocalDate dueDate;
     private Integer parentTaskId;
     private Integer createdBy;
     private LocalDateTime createdAt;
 
     public Task(){}
 
-    public Task(int taskId, Integer projectId, String description, String taskName, Integer statusId, Integer priorityId, double estimatedHours, Integer parentTaskId, Integer createdBy, LocalDateTime createdAt) {
+    public Task(int taskId, Integer projectId, String description, String taskName, Integer statusId, Integer priorityId, double estimatedHours,LocalDate dueDate, Integer parentTaskId, Integer createdBy, LocalDateTime createdAt) {
         this.taskId = taskId;
         this.projectId = projectId;
         this.description = description;
@@ -25,20 +27,30 @@ public class Task {
         this.statusId = statusId;
         this.priorityId = priorityId;
         this.estimatedHours = estimatedHours;
+        this.dueDate = dueDate;
         this.parentTaskId = parentTaskId;
         this.createdBy = createdBy;
         this.createdAt = createdAt;
     }
 
-    public Task(Integer projectId, String taskName, String description, Integer statusId, Integer priorityId, double estimatedHours, Integer parentTaskId, Integer createdBy) {
+    public Task(Integer projectId, String taskName, String description, Integer statusId, Integer priorityId, double estimatedHours,LocalDate dueDate, Integer parentTaskId, Integer createdBy) {
         this.projectId = projectId;
         this.taskName = taskName;
         this.description = description;
         this.statusId = statusId;
         this.priorityId = priorityId;
         this.estimatedHours = estimatedHours;
+        this.dueDate = dueDate;
         this.parentTaskId = parentTaskId;
         this.createdBy = createdBy;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
     }
 
     public int getTaskId() {

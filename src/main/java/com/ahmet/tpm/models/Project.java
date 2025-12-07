@@ -30,10 +30,12 @@ public class Project {
         this.createdAt = createdAt;
     }
 
-    public Project(String projectName, LocalDateTime deadline, Integer statusId, Integer departmentId, Integer createdBy) {
+    public Project(String projectName,String description,LocalDateTime projectStartDate, LocalDateTime deadline, Integer statusId, Integer departmentId, Integer createdBy) {
         this.projectName = projectName;
+        this.description = description;
+        this.projectStartDate = projectStartDate;
         this.deadline = deadline;
-        this.statusId = statusId;
+        this.statusId = 1;// default 1 = planning
         this.departmentId = departmentId;
         this.createdBy = createdBy;
     }

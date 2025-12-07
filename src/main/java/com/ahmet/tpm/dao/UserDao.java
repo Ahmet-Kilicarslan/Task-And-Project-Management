@@ -10,7 +10,7 @@ import java.util.List;
 
 public class UserDao {
 
-    public int insertUser(User user) throws SQLException {
+    public int insert(User user) throws SQLException {
         String sql = "INSERT INTO Users (username, password, email, full_name, department_id) " +
                 "VALUES (?, ?, ?, ?, ?)";
 
