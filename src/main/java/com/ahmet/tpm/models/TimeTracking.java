@@ -1,72 +1,75 @@
 package com.ahmet.tpm.models;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public class TimeTracking {
 
-    private int timeTrackingId;
-    private int taskId;
-    private int userId;
-    private Date workDate;
-    private double hoursWorked;
+    private Integer timeEntryId;
+    private Integer taskId;
+    private Integer userId;
+    private LocalDate workDate;
+    private Double hoursWorked;
 
-
+    // Constructor 1: No-arg
     public TimeTracking() {
     }
 
-
-    public TimeTracking(int timeTrackingId, int taskId, Date workDate, int userId, double hoursWorked) {
-        this.timeTrackingId = timeTrackingId;
-        this.taskId = taskId;
-        this.workDate = workDate;
-        this.userId = userId;
-        this.hoursWorked = hoursWorked;
-    }
-
-    public TimeTracking(int taskId, int userId, Date workDate, double hoursWorked) {
+    // Constructor 2: Without ID (for INSERT)
+    public TimeTracking(Integer taskId, Integer userId, LocalDate workDate, Double hoursWorked) {
         this.taskId = taskId;
         this.userId = userId;
         this.workDate = workDate;
         this.hoursWorked = hoursWorked;
     }
 
-    public int getTimeTrackingId() {
-        return timeTrackingId;
-    }
-
-    public void setTimeTrackingId(int timeTrackingId) {
-        this.timeTrackingId = timeTrackingId;
-    }
-
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
+    // Constructor 3: Full with ID (for SELECT)
+    public TimeTracking(Integer timeEntryId, Integer taskId, Integer userId,
+                        LocalDate workDate, Double hoursWorked) {
+        this.timeEntryId = timeEntryId;
+        this.taskId = taskId;
         this.userId = userId;
+        this.workDate = workDate;
+        this.hoursWorked = hoursWorked;
     }
 
-    public int getTaskId() {
+    // Getters and Setters
+    public Integer getTimeEntryId() {
+        return timeEntryId;
+    }
+
+    public void setTimeEntryId(Integer timeEntryId) {
+        this.timeEntryId = timeEntryId;
+    }
+
+    public Integer getTaskId() {
         return taskId;
     }
 
-    public void setTaskId(int taskId) {
+    public void setTaskId(Integer taskId) {
         this.taskId = taskId;
     }
 
-    public Date getWorkDate() {
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
+    public LocalDate getWorkDate() {
         return workDate;
     }
 
-    public void setWorkDate(Date workDate) {
+    public void setWorkDate(LocalDate workDate) {
         this.workDate = workDate;
     }
 
-    public double getHoursWorked() {
+    public Double getHoursWorked() {
         return hoursWorked;
     }
 
-    public void setHoursWorked(double hoursWorked) {
+    public void setHoursWorked(Double hoursWorked) {
         this.hoursWorked = hoursWorked;
     }
 }

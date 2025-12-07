@@ -199,7 +199,7 @@ public class TaskDependencyDao{
      * Check if task has any dependencies (is it blocked?)
      */
     public boolean taskHasDependencies(int taskId) {
-        String sql = "SELECT 1 FROM TaskDependencies WHERE task_id = ? LIMIT 1";
+        String sql = "SELECT TOP 1 1 FROM TaskDependencies WHERE task_id = ? ";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -219,7 +219,7 @@ public class TaskDependencyDao{
      * Check if task is blocking other tasks
      */
     public boolean taskIsBlocking(int taskId) {
-        String sql = "SELECT 1 FROM TaskDependencies WHERE depends_on_task_id = ? LIMIT 1";
+        String sql = "SELECT TOP 1 1 FROM TaskDependencies WHERE depends_on_task_id = ? ";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
