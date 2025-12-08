@@ -2,6 +2,7 @@ package com.ahmet.tpm.projectFrames;
 
 import com.ahmet.tpm.projectFrames.projects.ProjectsModulePanel;
 import com.ahmet.tpm.projectFrames.profile.ProfilePanel;
+import com.ahmet.tpm.projectFrames.dashboard.DashboardPanel;
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
 import com.ahmet.tpm.utils.UIHelper;
@@ -53,7 +54,7 @@ public class MainFrame extends JFrame {
         appName.setForeground(StyleUtil.PRIMARY);
         leftPanel.add(appName);
 
-        // Center - Nav buttons (TASK SİLİNDİ!)
+        // Center - Nav buttons (TASK SÄ°LÄ°NDÄ°!)
         JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 15));
         centerPanel.setBackground(StyleUtil.SURFACE);
 
@@ -107,10 +108,11 @@ public class MainFrame extends JFrame {
         ));
 
         // Create actual module panels
+        DashboardPanel dashboardPanel = new DashboardPanel(this);
         ProjectsModulePanel projectsModule = new ProjectsModulePanel(this);
         ProfilePanel profilePanel = new ProfilePanel(this);
 
-        contentPanel.add(createPlaceholder("Dashboard", "Welcome back!"), "DASHBOARD");
+        contentPanel.add(dashboardPanel, "DASHBOARD");
         contentPanel.add(projectsModule, "PROJECTS");
         contentPanel.add(profilePanel, "PROFILE");
 
@@ -140,7 +142,7 @@ public class MainFrame extends JFrame {
         UIHelper.updateNavButtonStates(btnDashboard, btnDashboard, btnProjects, btnProfile);
     }
 
-    private void showProjects() {
+    public void showProjects() {
         cardLayout.show(contentPanel, "PROJECTS");
         UIHelper.updateNavButtonStates(btnProjects, btnDashboard, btnProjects, btnProfile);
     }
