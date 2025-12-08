@@ -1,8 +1,11 @@
-package com.ahmet.tpm.frames;
-
+package com.ahmet.tpm.projectFrames;
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
 import com.ahmet.tpm.utils.UIHelper;
+import com.ahmet.tpm.projectFrames.projects.ProjectsModulePanel;
+import com.ahmet.tpm.projectFrames.profile.ProfilePanel;
+
+
 
 import javax.swing.*;
 import java.awt.*;
@@ -109,9 +112,15 @@ public class MainFrame extends JFrame {
                 StyleUtil.CONTENT_PADDING
         ));
 
+        // Create actual module panels
+        ProjectsModulePanel projectsModule = new ProjectsModulePanel(this);
+
+        // Add to CardLayout with identifier "PROJECTS"
+        contentPanel.add(projectsModule, "PROJECTS");
+
         // Placeholders
         contentPanel.add(createPlaceholder("📊 Dashboard", "Welcome back!"), "DASHBOARD");
-        contentPanel.add(createPlaceholder("📁 Projects", "Manage projects"), "PROJECTS");
+        //contentPanel.add(createPlaceholder("📁 Projects", "Manage projects"), "PROJECTS");
         contentPanel.add(createPlaceholder("✅ Tasks", "View tasks"), "TASKS");
         contentPanel.add(createPlaceholder("👤 Profile", "Your profile"), "PROFILE");
 

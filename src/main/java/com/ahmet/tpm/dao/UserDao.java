@@ -59,6 +59,23 @@ public class UserDao {
         return null;  // User not found
     }
 
+    public User findByEmail(String email) throws SQLException {
+        String sql = "SELECT * FROM Users WHERE email = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, email);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return extractUserFromResultSet(rs);
+                }
+            }
+        }
+        return null;
+    }
+
     // READ - Get user by username
     public User findByUsername(String username) throws SQLException {
         String sql = "SELECT * FROM Users WHERE username = ?";

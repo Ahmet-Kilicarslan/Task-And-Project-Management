@@ -1,4 +1,4 @@
-package com.ahmet.tpm.frames.projects;
+package com.ahmet.tpm.projectFrames.projects;
 
 import com.ahmet.tpm.dao.ProjectDao;
 import com.ahmet.tpm.dao.ProjectStatusDao;
@@ -6,7 +6,7 @@ import com.ahmet.tpm.dao.UserDao;
 import com.ahmet.tpm.dao.TaskDao;
 import com.ahmet.tpm.dao.DepartmentDao;
 import com.ahmet.tpm.dao.ProjectMemberDao;
-import com.ahmet.tpm.frames.MainFrame;
+import com.ahmet.tpm.projectFrames.MainFrame;
 import com.ahmet.tpm.models.Project;
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
@@ -208,7 +208,9 @@ public class ProjectDetailsPanel extends JPanel {
         txtDescription.setLineWrap(true);
         txtDescription.setWrapStyleWord(true);
         txtDescription.setEditable(false);
-        txtDescription.setBackground(StyleUtil.SURFACE);
+        txtDescription.setBackground(Color.WHITE);
+        txtDescription.setForeground(StyleUtil.TEXT_PRIMARY);
+
 
         JScrollPane scrollPane = new JScrollPane(txtDescription);
         scrollPane.setBorder(BorderFactory.createLineBorder(StyleUtil.BORDER));

@@ -1,6 +1,6 @@
-package com.ahmet.tpm.frames.projects;
+package com.ahmet.tpm.projectFrames.projects;
 
-import com.ahmet.tpm.frames.MainFrame;
+import com.ahmet.tpm.projectFrames.MainFrame;
 import com.ahmet.tpm.utils.StyleUtil;
 
 import javax.swing.*;
@@ -71,7 +71,11 @@ public class ProjectsModulePanel extends JPanel {
      * Navigate to project details view
      */
     public void showProjectDetails(int projectId) {
-        projectDetailsPanel.loadProject(projectId);  // Load specific project
+        try {
+            projectDetailsPanel.loadProject(projectId);  // Load specific project
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         cardLayout.show(contentPanel, CARD_DETAILS);
     }
 
@@ -97,8 +101,16 @@ public class ProjectsModulePanel extends JPanel {
      * Open Manage Members Dialog (modal pop-up)
      */
     public void openManageMembersDialog(int projectId) {
-        ManageMembersDialog dialog = new ManageMembersDialog(mainFrame, this, projectId);
-        dialog.setVisible(true);
+        try {
+            ManageMembersDialog dialog = new ManageMembersDialog(mainFrame, this, projectId);
+            dialog.setVisible(true);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(mainFrame,
+                    "Error opening manage members dialog: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }
 
     /**

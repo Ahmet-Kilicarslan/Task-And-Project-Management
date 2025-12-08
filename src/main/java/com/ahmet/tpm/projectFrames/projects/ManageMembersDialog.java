@@ -1,9 +1,9 @@
-package com.ahmet.tpm.frames.projects;
+package com.ahmet.tpm.projectFrames.projects;
 
 import com.ahmet.tpm.dao.ProjectMemberDao;
 import com.ahmet.tpm.dao.UserDao;
 import com.ahmet.tpm.dao.ProjectDao;
-import com.ahmet.tpm.frames.MainFrame;
+import com.ahmet.tpm.projectFrames.MainFrame;
 import com.ahmet.tpm.models.ProjectMember;
 import com.ahmet.tpm.models.User;
 import com.ahmet.tpm.models.Project;
@@ -142,6 +142,11 @@ public class ManageMembersDialog extends JDialog {
         membersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         membersTable.getTableHeader().setFont(StyleUtil.FONT_BUTTON);
         membersTable.getTableHeader().setBackground(StyleUtil.PRIMARY_LIGHT);
+        membersTable.setBackground(Color.WHITE);
+        membersTable.setForeground(StyleUtil.TEXT_PRIMARY);
+        membersTable.setGridColor(StyleUtil.BORDER);
+        membersTable.setSelectionBackground(StyleUtil.PRIMARY_LIGHT);
+        membersTable.setSelectionForeground(StyleUtil.TEXT_PRIMARY);
 
         // Column widths
         membersTable.getColumnModel().getColumn(0).setPreferredWidth(80);   // Member ID
@@ -197,6 +202,9 @@ public class ManageMembersDialog extends JDialog {
         cmbUsers = new JComboBox<>();
         cmbUsers.setFont(StyleUtil.FONT_BODY);
         cmbUsers.setPreferredSize(new Dimension(250, 35));
+        cmbUsers.setBackground(Color.WHITE);
+        cmbUsers.setForeground(StyleUtil.TEXT_PRIMARY);
+
         cmbUsers.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value,
@@ -215,6 +223,8 @@ public class ManageMembersDialog extends JDialog {
         txtRole = new JTextField(15);
         txtRole.setFont(StyleUtil.FONT_BODY);
         txtRole.setPreferredSize(new Dimension(200, 35));
+        txtRole.setBackground(Color.WHITE);
+        txtRole.setForeground(StyleUtil.TEXT_PRIMARY);
         txtRole.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(StyleUtil.BORDER),
                 BorderFactory.createEmptyBorder(5, 8, 5, 8)

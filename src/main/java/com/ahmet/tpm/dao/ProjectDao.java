@@ -45,6 +45,23 @@ public class ProjectDao {
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
+            // Set parameters
+            stmt.setString(1, project.getProjectName());
+            stmt.setString(2, project.getDescription());
+            stmt.setTimestamp(3, project.getStartDate() != null ?
+                    Timestamp.valueOf(project.getStartDate()) : null);
+            stmt.setTimestamp(4, project.getDeadline() != null ?
+                    Timestamp.valueOf(project.getDeadline()) : null);
+            stmt.setInt(5, project.getStatusId());
+
+            if (project.getDepartmentId() != null) {
+                stmt.setInt(6, project.getDepartmentId());
+            } else {
+                stmt.setNull(6, Types.INTEGER);
+            }
+
+            stmt.setInt(7, project.getCreatedBy());
+
             int affected = stmt.executeUpdate();
 
             if (affected == 0) {

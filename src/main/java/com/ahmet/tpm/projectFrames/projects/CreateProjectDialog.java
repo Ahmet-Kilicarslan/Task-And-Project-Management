@@ -1,9 +1,9 @@
-package com.ahmet.tpm.frames.projects;
+package com.ahmet.tpm.projectFrames.projects;
 
 import com.ahmet.tpm.dao.DepartmentDao;
 import com.ahmet.tpm.dao.ProjectDao;
 import com.ahmet.tpm.dao.ProjectStatusDao;
-import com.ahmet.tpm.frames.MainFrame;
+import com.ahmet.tpm.projectFrames.MainFrame;
 import com.ahmet.tpm.models.Department;
 import com.ahmet.tpm.models.Project;
 import com.ahmet.tpm.models.ProjectStatus;
@@ -16,7 +16,7 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.util.List;
 
-public class EditProjectDialog extends JDialog {
+public class CreateProjectDialog extends JDialog {
 
     private ProjectsModulePanel parentModule;
     private MainFrame mainFrame;
@@ -26,9 +26,6 @@ public class EditProjectDialog extends JDialog {
     private ProjectStatusDao statusDao;
     private DepartmentDao departmentDao;
 
-    // Current project being edited
-    private Project project;
-
     // Form fields
     private JTextField txtProjectName;
     private JTextField txtStartDate;
@@ -37,31 +34,21 @@ public class EditProjectDialog extends JDialog {
     private JComboBox<Department> cmbDepartment;
     private JTextArea txtDescription;
 
-    public EditProjectDialog(MainFrame mainFrame, ProjectsModulePanel parentModule, int projectId) {
-        super(mainFrame, "Edit Project", true);  // true = modal
+    public CreateProjectDialog(MainFrame mainFrame, ProjectsModulePanel parentModule) {
+        super(mainFrame, "Create New Project", true);  // true = modal
         this.mainFrame = mainFrame;
         this.parentModule = parentModule;
         this.projectDao = new ProjectDao();
         this.statusDao = new ProjectStatusDao();
         this.departmentDao = new DepartmentDao();
 
-        // Load project
-        this.project = projectDao.findById(projectId);
-
-        if (this.project == null) {
-            UIHelper.showError(mainFrame, "Project not found!");
-            dispose();
-            return;
-        }
-
         initializeDialog();
         loadDropdownData();
-        populateFormWithProjectData();
     }
 
     private void initializeDialog() {
         setSize(600, 650);
-        setLocationRelativeTo(mainFrame);
+        setLocationRelativeTo(mainFrame);  // Center on parent
         setLayout(new BorderLayout());
         setResizable(false);
 
@@ -81,7 +68,7 @@ public class EditProjectDialog extends JDialog {
         panel.setBorder(StyleUtil.createPaddingBorder(20));
 
         // Title
-        JLabel titleLabel = ComponentFactory.createHeadingLabel("âœï¸ Edit Project");
+        JLabel titleLabel = ComponentFactory.createHeadingLabel("Create New Project");
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createVerticalStrut(20));
@@ -135,6 +122,8 @@ public class EditProjectDialog extends JDialog {
         txtDescription.setFont(StyleUtil.FONT_BODY);
         txtDescription.setLineWrap(true);
         txtDescription.setWrapStyleWord(true);
+        txtDescription.setBackground(Color.WHITE);
+        txtDescription.setForeground(StyleUtil.TEXT_PRIMARY);
         txtDescription.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(StyleUtil.BORDER),
                 BorderFactory.createEmptyBorder(8, 8, 8, 8)
@@ -168,10 +157,22 @@ public class EditProjectDialog extends JDialog {
         panel.add(label);
         panel.add(Box.createVerticalStrut(5));
 
+        field.setBackground(Color.WHITE);
+        field.setForeground(Color.BLACK);
+
         field.setFont(StyleUtil.FONT_BODY);
         field.setMaximumSize(new Dimension(550, 40));
         field.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+
+        // Set background colors for text fields and combo boxes
+        if (field instanceof JTextField) {
+            field.setBackground(Color.WHITE);
+            field.setForeground(StyleUtil.TEXT_PRIMARY);
+        } else if (field instanceof JComboBox) {
+            field.setBackground(Color.WHITE);
+            field.setForeground(StyleUtil.TEXT_PRIMARY);
+        }
         if (field instanceof JTextField) {
             ((JTextField) field).setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(StyleUtil.BORDER),
@@ -190,10 +191,10 @@ public class EditProjectDialog extends JDialog {
         panel.setBackground(StyleUtil.SURFACE);
         panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, StyleUtil.BORDER));
 
-        JButton btnSave = ComponentFactory.createPrimaryButton("ðŸ’¾ Save Changes");
-        btnSave.addActionListener(e -> saveChanges());
+        JButton btnSave = ComponentFactory.createPrimaryButton("Save Project");
+        btnSave.addActionListener(e -> saveProject());
 
-        JButton btnCancel = ComponentFactory.createSecondaryButton("âŒ Cancel");
+        JButton btnCancel = ComponentFactory.createSecondaryButton("Cancel");
         btnCancel.addActionListener(e -> dispose());
 
         panel.add(btnSave);
@@ -209,6 +210,14 @@ public class EditProjectDialog extends JDialog {
             cmbStatus.addItem(status);
         }
 
+        // Set default to "Active" if exists
+        for (int i = 0; i < cmbStatus.getItemCount(); i++) {
+            if (cmbStatus.getItemAt(i).getStatusName().equals("Active")) {
+                cmbStatus.setSelectedIndex(i);
+                break;
+            }
+        }
+
         // Load departments
         cmbDepartment.addItem(null);  // Optional field
         List<Department> departments = departmentDao.findAll();
@@ -217,52 +226,15 @@ public class EditProjectDialog extends JDialog {
         }
     }
 
-    private void populateFormWithProjectData() {
-        // Project Name
-        txtProjectName.setText(project.getProjectName());
-
-        // Dates
-        if (project.getStartDate() != null) {
-            txtStartDate.setText(project.getStartDate().toString());
-        }
-
-        if (project.getDeadline() != null) {
-            txtDeadline.setText(project.getDeadline().toString());
-        }
-
-        // Status - Select the matching status
-        for (int i = 0; i < cmbStatus.getItemCount(); i++) {
-            if (cmbStatus.getItemAt(i).getStatusId() == project.getStatusId()) {
-                cmbStatus.setSelectedIndex(i);
-                break;
-            }
-        }
-
-        // Department - Select the matching department
-        if (project.getDepartmentId() != null) {
-            for (int i = 0; i < cmbDepartment.getItemCount(); i++) {
-                Department dept = cmbDepartment.getItemAt(i);
-                if (dept != null && dept.getDepartmentId() == project.getDepartmentId()) {
-                    cmbDepartment.setSelectedIndex(i);
-                    break;
-                }
-            }
-        }
-
-        // Description
-        if (project.getDescription() != null) {
-            txtDescription.setText(project.getDescription());
-        }
-    }
-
-    private void saveChanges() {
+    private void saveProject() {
         // Validate
         if (!validateForm()) {
             return;
         }
 
         try {
-            // Update project object
+            // Create project object
+            Project project = new Project();
             project.setProjectName(txtProjectName.getText().trim());
 
             // Parse dates - Convert LocalDate to LocalDateTime
@@ -270,16 +242,12 @@ public class EditProjectDialog extends JDialog {
             if (!startDateStr.isEmpty()) {
                 LocalDate date = LocalDate.parse(startDateStr);
                 project.setStartDate(date.atStartOfDay());
-            } else {
-                project.setStartDate(null);
             }
 
             String deadlineStr = txtDeadline.getText().trim();
             if (!deadlineStr.isEmpty()) {
                 LocalDate date = LocalDate.parse(deadlineStr);
                 project.setDeadline(date.atTime(23, 59, 59));
-            } else {
-                project.setDeadline(null);
             }
 
             // Status
@@ -290,26 +258,29 @@ public class EditProjectDialog extends JDialog {
             Department selectedDept = (Department) cmbDepartment.getSelectedItem();
             if (selectedDept != null) {
                 project.setDepartmentId(selectedDept.getDepartmentId());
-            } else {
-                project.setDepartmentId(null);
             }
 
             // Description
             String description = txtDescription.getText().trim();
-            project.setDescription(!description.isEmpty() ? description : null);
+            if (!description.isEmpty()) {
+                project.setDescription(description);
+            }
 
-            // Update in database
-            projectDao.update(project);
+            // Created by current user
+            project.setCreatedBy(mainFrame.getCurrentUserId());
 
-            UIHelper.showSuccess(mainFrame, "Project updated successfully!");
+            // Save to database
+            projectDao.insert(project);
+
+            UIHelper.showSuccess(mainFrame, "Project created successfully!");
 
             // Notify parent to refresh and close dialog
-            parentModule.onProjectUpdated();
+            parentModule.onProjectSaved();
             dispose();
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                    "Error updating project: " + e.getMessage(),
+                    "Error saving project: " + e.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();

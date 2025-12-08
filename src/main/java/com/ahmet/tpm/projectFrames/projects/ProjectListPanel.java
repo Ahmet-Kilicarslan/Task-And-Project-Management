@@ -1,8 +1,8 @@
-package com.ahmet.tpm.frames.projects;
+package com.ahmet.tpm.projectFrames.projects;
 
 import com.ahmet.tpm.dao.ProjectDao;
 import com.ahmet.tpm.dao.ProjectStatusDao;
-import com.ahmet.tpm.frames.MainFrame;
+import com.ahmet.tpm.projectFrames.MainFrame;
 import com.ahmet.tpm.models.Project;
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
@@ -37,7 +37,15 @@ public class ProjectListPanel extends JPanel {
         setBackground(StyleUtil.BACKGROUND);
 
         initializeUI();
-        loadProjects();
+
+        // Try to load projects, but don't crash if database is not available
+        try {
+            loadProjects();
+        } catch (Exception e) {
+            System.err.println("⚠ Warning: Could not load projects. Database may not be configured.");
+            System.err.println("Please check your .env file and database connection.");
+            showDatabaseError();
+        }
     }
 
     private void initializeUI() {
@@ -56,18 +64,18 @@ public class ProjectListPanel extends JPanel {
         toolbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, StyleUtil.BORDER));
 
         // Title
-        JLabel titleLabel = ComponentFactory.createHeadingLabel("📁 Projects");
+        JLabel titleLabel = ComponentFactory.createHeadingLabel("Projects");
         toolbar.add(titleLabel);
 
         toolbar.add(Box.createHorizontalStrut(20));
 
         // Create button
-        JButton btnCreate = ComponentFactory.createPrimaryButton("➕ Create New");
+        JButton btnCreate = ComponentFactory.createPrimaryButton("Create New");
         btnCreate.addActionListener(e -> parentModule.openCreateProjectDialog());
         toolbar.add(btnCreate);
 
         // Refresh button
-        JButton btnRefresh = ComponentFactory.createSecondaryButton("🔄 Refresh");
+        JButton btnRefresh = ComponentFactory.createSecondaryButton("Refresh");
         btnRefresh.addActionListener(e -> refreshData());
         toolbar.add(btnRefresh);
 
@@ -76,17 +84,21 @@ public class ProjectListPanel extends JPanel {
         // Search field
         searchField = new JTextField(20);
         searchField.setFont(StyleUtil.FONT_BODY);
+        searchField.setBackground(Color.WHITE);
+        searchField.setForeground(StyleUtil.TEXT_PRIMARY);
         searchField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(StyleUtil.BORDER),
                 BorderFactory.createEmptyBorder(8, 10, 8, 10)
         ));
-        toolbar.add(new JLabel("🔍"));
+        toolbar.add(new JLabel("Search:"));
         toolbar.add(searchField);
 
         // Status filter
         statusFilter = new JComboBox<>(new String[]{"All Status", "Planning", "Active", "Completed", "Cancelled"});
         statusFilter.setFont(StyleUtil.FONT_BODY);
         statusFilter.addActionListener(e -> filterProjects());
+        statusFilter.setBackground(Color.WHITE);
+        statusFilter.setForeground(StyleUtil.TEXT_PRIMARY);
         toolbar.add(statusFilter);
 
         // Search button
@@ -117,6 +129,11 @@ public class ProjectListPanel extends JPanel {
         projectTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         projectTable.getTableHeader().setFont(StyleUtil.FONT_BUTTON);
         projectTable.getTableHeader().setBackground(StyleUtil.PRIMARY_LIGHT);
+        projectTable.setBackground(Color.WHITE);
+        projectTable.setForeground(StyleUtil.TEXT_PRIMARY);
+        projectTable.setGridColor(StyleUtil.BORDER);
+        projectTable.setSelectionBackground(StyleUtil.PRIMARY_LIGHT);
+        projectTable.setSelectionForeground(StyleUtil.TEXT_PRIMARY);
 
         // Set column widths
         projectTable.getColumnModel().getColumn(0).setPreferredWidth(50);   // ID
@@ -153,7 +170,7 @@ public class ProjectListPanel extends JPanel {
         statsLabel.setName("statsLabel");  // For easy reference
         bottomPanel.add(statsLabel, BorderLayout.WEST);
 
-        JButton btnViewSelected = ComponentFactory.createPrimaryButton("👁️ View Selected");
+        JButton btnViewSelected = ComponentFactory.createPrimaryButton("View Selected");
         btnViewSelected.addActionListener(e -> viewSelectedProject());
         bottomPanel.add(btnViewSelected, BorderLayout.EAST);
 
@@ -172,8 +189,8 @@ public class ProjectListPanel extends JPanel {
                     project.getProjectId(),
                     project.getProjectName(),
                     getStatusName(project.getStatusId()),
-                    project.getStartDate() != null ? project.getStartDate().toString() : "-",
-                    project.getDeadline() != null ? project.getDeadline().toString() : "-",
+                    project.getStartDate() != null ? project.getStartDate().toLocalDate().toString() : "-",
+                    project.getDeadline() != null ? project.getDeadline().toLocalDate().toString() : "-",
                     getDepartmentName(project.getDepartmentId())
             };
             tableModel.addRow(row);
@@ -224,8 +241,8 @@ public class ProjectListPanel extends JPanel {
                     project.getProjectId(),
                     project.getProjectName(),
                     getStatusName(project.getStatusId()),
-                    project.getStartDate() != null ? project.getStartDate().toString() : "-",
-                    project.getDeadline() != null ? project.getDeadline().toString() : "-",
+                    project.getStartDate() != null ? project.getStartDate().toLocalDate().toString() : "-",
+                    project.getDeadline() != null ? project.getDeadline().toLocalDate().toString() : "-",
                     getDepartmentName(project.getDepartmentId())
             };
             tableModel.addRow(row);
@@ -265,5 +282,61 @@ public class ProjectListPanel extends JPanel {
 
     public void refreshData() {
         loadProjects();
+    }
+
+    /**
+     * Show database connection error message
+     */
+    private void showDatabaseError() {
+        JPanel errorPanel = new JPanel();
+        errorPanel.setLayout(new BoxLayout(errorPanel, BoxLayout.Y_AXIS));
+        errorPanel.setBackground(StyleUtil.BACKGROUND);
+        errorPanel.setBorder(StyleUtil.createPaddingBorder(50));
+
+        JLabel errorIcon = new JLabel("⚠️");
+        errorIcon.setFont(new Font("Segoe UI", Font.PLAIN, 72));
+        errorIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel errorTitle = ComponentFactory.createTitleLabel("Database Not Connected");
+        errorTitle.setForeground(StyleUtil.DANGER);
+        errorTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel errorMsg1 = ComponentFactory.createBodyLabel("Please create a .env file in your project root with:");
+        errorMsg1.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JTextArea configExample = new JTextArea(
+                "DB_HOST=localhost\n" +
+                        "DB_PORT=1433\n" +
+                        "DB_NAME=Task_And_Project_Management\n" +
+                        "DB_USER=sa\n" +
+                        "DB_PASSWORD=YourPassword"
+        );
+        configExample.setEditable(false);
+        configExample.setBackground(new Color(245, 245, 245));
+        configExample.setFont(new Font("Courier New", Font.PLAIN, 14));
+        configExample.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(StyleUtil.BORDER, 2),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+        configExample.setMaximumSize(new Dimension(400, 150));
+
+        JLabel errorMsg2 = ComponentFactory.createBodyLabel("Then restart the application.");
+        errorMsg2.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        errorPanel.add(errorIcon);
+        errorPanel.add(Box.createVerticalStrut(20));
+        errorPanel.add(errorTitle);
+        errorPanel.add(Box.createVerticalStrut(20));
+        errorPanel.add(errorMsg1);
+        errorPanel.add(Box.createVerticalStrut(10));
+        errorPanel.add(configExample);
+        errorPanel.add(Box.createVerticalStrut(10));
+        errorPanel.add(errorMsg2);
+
+        // Replace the table panel with error panel
+        removeAll();
+        add(errorPanel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
     }
 }
