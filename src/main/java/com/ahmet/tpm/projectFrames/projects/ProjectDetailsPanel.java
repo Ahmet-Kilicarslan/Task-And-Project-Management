@@ -296,10 +296,10 @@ public class ProjectDetailsPanel extends JPanel {
 
         // Dates
         lblStartDate.setText(currentProject.getStartDate() != null ?
-                currentProject.getStartDate().toString() : "Not set");
+                currentProject.getStartDate().toLocalDate().toString() : "Not set");
 
         lblDeadline.setText(currentProject.getDeadline() != null ?
-                currentProject.getDeadline().toString() : "Not set");
+                currentProject.getDeadline().toLocalDate().toString() : "Not set");
 
         // Department
         if (currentProject.getDepartmentId() != null) {

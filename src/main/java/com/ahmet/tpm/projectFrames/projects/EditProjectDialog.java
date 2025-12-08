@@ -235,11 +235,11 @@ public class EditProjectDialog extends JDialog {
 
         // Dates
         if (project.getStartDate() != null) {
-            txtStartDate.setText(project.getStartDate().toString());
+            txtStartDate.setText(project.getStartDate().toLocalDate().toString());
         }
 
         if (project.getDeadline() != null) {
-            txtDeadline.setText(project.getDeadline().toString());
+            txtDeadline.setText(project.getDeadline().toLocalDate().toString());
         }
 
         // Status - Select the matching status

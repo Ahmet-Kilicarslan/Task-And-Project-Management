@@ -28,7 +28,7 @@ public class LoginFrame extends JFrame {
     }
 
     private void initializeFrame() {
-        setTitle("ProjectFlow - Login");
+        setTitle("TaskFlow - Login");
         setSize(450, 550);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -64,9 +64,10 @@ public class LoginFrame extends JFrame {
         txtEmail = new JTextField();
         txtEmail.setFont(StyleUtil.FONT_BODY);
         txtEmail.setMaximumSize(new Dimension(350, 45));
-        txtEmail.setBackground(Color.WHITE);        // BEYAZ KUTU
-        txtEmail.setForeground(Color.BLACK);  // SİYAH YAZI (görünür olsun)
-        txtEmail.setCaretColor(Color.BLACK);  // İmleç rengi
+        txtEmail.setBackground(Color.WHITE);
+        txtEmail.setOpaque(true);
+        txtEmail.setForeground(Color.BLACK);  // SİYAH YAZI
+        txtEmail.setCaretColor(Color.BLACK);  // İMLEÇ SİYAH
         txtEmail.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(StyleUtil.BORDER, 2),
                 BorderFactory.createEmptyBorder(10, 15, 10, 15)
@@ -87,9 +88,10 @@ public class LoginFrame extends JFrame {
         txtPassword = new JPasswordField();
         txtPassword.setFont(StyleUtil.FONT_BODY);
         txtPassword.setMaximumSize(new Dimension(350, 45));
-        txtPassword.setBackground(Color.WHITE);        // BEYAZ KUTU
-        txtPassword.setForeground(Color.BLACK);  // SİYAH YAZI (görünür olsun)
-        txtPassword.setCaretColor(Color.BLACK);  // İmleç rengi
+        txtPassword.setBackground(Color.WHITE);
+        txtPassword.setOpaque(true);// MAVİ ARKA PLAN (LIGHT BLUE)
+        txtPassword.setForeground(Color.BLACK);  // SİYAH YAZI
+        txtPassword.setCaretColor(Color.BLACK);  // İMLEÇ SİYAH
         txtPassword.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(StyleUtil.BORDER, 2),
                 BorderFactory.createEmptyBorder(10, 15, 10, 15)
@@ -102,7 +104,7 @@ public class LoginFrame extends JFrame {
         btnLogin = new JButton("SIGN IN");
         btnLogin.setFont(StyleUtil.FONT_BUTTON);
         btnLogin.setForeground(Color.WHITE);
-        btnLogin.setBackground(StyleUtil.DANGER); // KIRMIZI
+        btnLogin.setBackground(StyleUtil.PRIMARY);
         btnLogin.setFocusPainted(false);
         btnLogin.setBorderPainted(false);
         btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -227,7 +229,7 @@ public class LoginFrame extends JFrame {
 
     public static void main(String[] args) {
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (Exception e) {
             e.printStackTrace();
         }

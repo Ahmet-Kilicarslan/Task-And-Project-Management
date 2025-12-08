@@ -1,11 +1,10 @@
 package com.ahmet.tpm.projectFrames;
+
+import com.ahmet.tpm.projectFrames.projects.ProjectsModulePanel;
+import com.ahmet.tpm.projectFrames.profile.ProfilePanel;
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
 import com.ahmet.tpm.utils.UIHelper;
-import com.ahmet.tpm.projectFrames.projects.ProjectsModulePanel;
-import com.ahmet.tpm.projectFrames.profile.ProfilePanel;
-
-
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,7 +14,7 @@ public class MainFrame extends JFrame {
     // Components
     private CardLayout cardLayout;
     private JPanel contentPanel;
-    private JButton btnDashboard, btnProjects, btnTasks, btnProfile;
+    private JButton btnDashboard, btnProjects, btnProfile;
 
     // User info
     private String currentUsername;
@@ -49,45 +48,40 @@ public class MainFrame extends JFrame {
         // Left - Logo
         JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 15));
         leftPanel.setBackground(StyleUtil.SURFACE);
-        leftPanel.add(new JLabel("📋"));
-        JLabel appName = new JLabel("TaskFlow");
+        JLabel appName = new JLabel("ProjectFlow");
         appName.setFont(StyleUtil.FONT_TITLE);
         appName.setForeground(StyleUtil.PRIMARY);
         leftPanel.add(appName);
 
-        // Center - Nav buttons
+        // Center - Nav buttons (TASK SİLİNDİ!)
         JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 15));
         centerPanel.setBackground(StyleUtil.SURFACE);
 
-        btnDashboard = ComponentFactory.createNavButton("📊 Dashboard", true);
-        btnProjects = ComponentFactory.createNavButton("📁 Projects", false);
-        btnTasks = ComponentFactory.createNavButton("✅ Tasks", false);
-        btnProfile = ComponentFactory.createNavButton("👤 Profile", false);
+        btnDashboard = ComponentFactory.createNavButton("Dashboard", true);
+        btnProjects = ComponentFactory.createNavButton("Projects", false);
+        btnProfile = ComponentFactory.createNavButton("Profile", false);
 
         // Add click handlers
         btnDashboard.addActionListener(e -> showDashboard());
         btnProjects.addActionListener(e -> showProjects());
-        btnTasks.addActionListener(e -> showTasks());
         btnProfile.addActionListener(e -> showProfile());
 
         // Add hover effects
-        UIHelper.addNavButtonHover(btnDashboard, btnDashboard, btnProjects, btnTasks, btnProfile);
-        UIHelper.addNavButtonHover(btnProjects, btnDashboard, btnProjects, btnTasks, btnProfile);
-        UIHelper.addNavButtonHover(btnTasks, btnDashboard, btnProjects, btnTasks, btnProfile);
-        UIHelper.addNavButtonHover(btnProfile, btnDashboard, btnProjects, btnTasks, btnProfile);
+        UIHelper.addNavButtonHover(btnDashboard, btnDashboard, btnProjects, btnProfile);
+        UIHelper.addNavButtonHover(btnProjects, btnDashboard, btnProjects, btnProfile);
+        UIHelper.addNavButtonHover(btnProfile, btnDashboard, btnProjects, btnProfile);
 
         centerPanel.add(btnDashboard);
         centerPanel.add(btnProjects);
-        centerPanel.add(btnTasks);
         centerPanel.add(btnProfile);
 
         // Right - User info
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 15));
         rightPanel.setBackground(StyleUtil.SURFACE);
 
-        JLabel userLabel = ComponentFactory.createBodyLabel("👋 " + currentUsername);
+        JLabel userLabel = ComponentFactory.createBodyLabel(currentUsername);
         userLabel.setForeground(StyleUtil.TEXT_PRIMARY);
-        JButton btnLogout = ComponentFactory.createDangerButton("🚪 Logout");
+        JButton btnLogout = ComponentFactory.createDangerButton("Logout");
         btnLogout.addActionListener(e -> logout());
 
         rightPanel.add(userLabel);
@@ -114,15 +108,11 @@ public class MainFrame extends JFrame {
 
         // Create actual module panels
         ProjectsModulePanel projectsModule = new ProjectsModulePanel(this);
+        ProfilePanel profilePanel = new ProfilePanel(this);
 
-        // Add to CardLayout with identifier "PROJECTS"
+        contentPanel.add(createPlaceholder("Dashboard", "Welcome back!"), "DASHBOARD");
         contentPanel.add(projectsModule, "PROJECTS");
-
-        // Placeholders
-        contentPanel.add(createPlaceholder("📊 Dashboard", "Welcome back!"), "DASHBOARD");
-        //contentPanel.add(createPlaceholder("📁 Projects", "Manage projects"), "PROJECTS");
-        contentPanel.add(createPlaceholder("✅ Tasks", "View tasks"), "TASKS");
-        contentPanel.add(createPlaceholder("👤 Profile", "Your profile"), "PROFILE");
+        contentPanel.add(profilePanel, "PROFILE");
 
         add(contentPanel, BorderLayout.CENTER);
     }
@@ -147,22 +137,17 @@ public class MainFrame extends JFrame {
     // Navigation methods
     private void showDashboard() {
         cardLayout.show(contentPanel, "DASHBOARD");
-        UIHelper.updateNavButtonStates(btnDashboard, btnDashboard, btnProjects, btnTasks, btnProfile);
+        UIHelper.updateNavButtonStates(btnDashboard, btnDashboard, btnProjects, btnProfile);
     }
 
     private void showProjects() {
         cardLayout.show(contentPanel, "PROJECTS");
-        UIHelper.updateNavButtonStates(btnProjects, btnDashboard, btnProjects, btnTasks, btnProfile);
-    }
-
-    private void showTasks() {
-        cardLayout.show(contentPanel, "TASKS");
-        UIHelper.updateNavButtonStates(btnTasks, btnDashboard, btnProjects, btnTasks, btnProfile);
+        UIHelper.updateNavButtonStates(btnProjects, btnDashboard, btnProjects, btnProfile);
     }
 
     private void showProfile() {
         cardLayout.show(contentPanel, "PROFILE");
-        UIHelper.updateNavButtonStates(btnProfile, btnDashboard, btnProjects, btnTasks, btnProfile);
+        UIHelper.updateNavButtonStates(btnProfile, btnDashboard, btnProjects, btnProfile);
     }
 
     private void logout() {
@@ -184,7 +169,12 @@ public class MainFrame extends JFrame {
     }
 
     public static void main(String[] args) {
-        UIHelper.setSystemLookAndFeel();
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         SwingUtilities.invokeLater(() -> {
             MainFrame frame = new MainFrame("Ahmet", 1);
             frame.setVisible(true);
