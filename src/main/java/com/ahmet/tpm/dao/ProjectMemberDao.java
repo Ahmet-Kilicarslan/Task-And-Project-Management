@@ -362,6 +362,22 @@ public class ProjectMemberDao {
         }
         return 0;
     }
+    public int countTotalMembers() {
+        String sql = "SELECT COUNT(DISTINCT user_id) FROM ProjectMembers";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("âœ— Error counting total members: " + e.getMessage());
+        }
+        return 0;
+    }
 
 
 

@@ -341,7 +341,57 @@ public class ProjectDao {
         }
     }
 
+    public int count() {
+        String sql = "SELECT COUNT(*) FROM Projects";
 
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("âœ— Error counting projects: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    public int countByStatus(int statusId) {
+        String sql = "SELECT COUNT(*) FROM Projects WHERE status_id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, statusId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("âœ— Error counting projects by status: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    public boolean exists(int id) {
+        String sql = "SELECT 1 FROM Projects WHERE project_id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+
+        } catch (SQLException e) {
+            System.err.println("âœ— Error checking project existence: " + e.getMessage());
+        }
+        return false;
+    }
 
 
 
