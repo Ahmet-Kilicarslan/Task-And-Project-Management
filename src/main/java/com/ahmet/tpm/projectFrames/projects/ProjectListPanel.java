@@ -1,11 +1,9 @@
 package com.ahmet.tpm.projectFrames.projects;
 
-import com.ahmet.tpm.dao.DepartmentDao;
 import com.ahmet.tpm.dao.ProjectDao;
-import com.ahmet.tpm.dao.ProjectStatusDao;
-import com.ahmet.tpm.models.Department;
 import com.ahmet.tpm.projectFrames.MainFrame;
 import com.ahmet.tpm.models.Project;
+import com.ahmet.tpm.models.ProjectWithDetails;
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
 
@@ -21,8 +19,6 @@ public class ProjectListPanel extends JPanel {
 
     // DAOs
     private ProjectDao projectDao;
-    private ProjectStatusDao statusDao;
-    private DepartmentDao departmentDao;
 
     // UI Components
     private JTable projectTable;
@@ -34,8 +30,6 @@ public class ProjectListPanel extends JPanel {
         this.parentModule = parentModule;
         this.mainFrame = mainFrame;
         this.projectDao = new ProjectDao();
-        this.statusDao = new ProjectStatusDao();
-        this.departmentDao = new DepartmentDao();
 
         setLayout(new BorderLayout());
         setBackground(StyleUtil.BACKGROUND);
@@ -46,7 +40,7 @@ public class ProjectListPanel extends JPanel {
         try {
             loadProjects();
         } catch (Exception e) {
-            System.err.println("âš  Warning: Could not load projects. Database may not be configured.");
+            System.err.println("Warning: Could not load projects. Database may not be configured.");
             System.err.println("Please check your .env file and database connection.");
             showDatabaseError();
         }
@@ -186,55 +180,21 @@ public class ProjectListPanel extends JPanel {
     private void loadProjects() {
         tableModel.setRowCount(0);  // Clear table
 
-        List<Project> projects = projectDao.findAll();
+        List<ProjectWithDetails> projects = projectDao.findAllWithDetails();
 
-        for (Project project : projects) {
+        for (ProjectWithDetails project : projects) {
             Object[] row = {
                     project.getProjectId(),
                     project.getProjectName(),
-                    getStatusName(project.getStatusId()),
+                    project.getStatusName() != null ? project.getStatusName() : "Unknown",
                     project.getStartDate() != null ? project.getStartDate().toLocalDate().toString() : "-",
                     project.getDeadline() != null ? project.getDeadline().toLocalDate().toString() : "-",
-                    getDepartmentName(project.getDepartmentId())
+                    project.getDepartmentName() != null ? project.getDepartmentName() : "-"
             };
             tableModel.addRow(row);
         }
 
         updateStats(projects.size());
-    }
-
-    private String getStatusName(int statusId) {
-        var status = statusDao.findById(statusId);
-        return status != null ? status.getStatusName() : "Unknown";
-    }
-
-    private String getDepartmentName(Integer departmentId) {
-        System.out.println("=== DEBUG getDepartmentName ===");
-        System.out.println("Department ID: " + departmentId);
-
-        if (departmentId == null) {
-            System.out.println("Department ID is NULL, returning '-'");
-            return "-";
-        }
-
-        try {
-            Department department = departmentDao.findById(departmentId);
-            System.out.println("Department object: " + department);
-
-            if (department != null) {
-                String name = department.getDepartmentName();
-                System.out.println("Department name: " + name);
-                return name;
-            } else {
-                System.out.println("Department not found in database for ID: " + departmentId);
-            }
-        } catch (Exception e) {
-            System.err.println("Exception in getDepartmentName: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        System.out.println("Returning fallback: Dept " + departmentId);
-        return "Dept " + departmentId;  // Fallback
     }
 
     private void filterProjects() {
@@ -243,10 +203,10 @@ public class ProjectListPanel extends JPanel {
 
         tableModel.setRowCount(0);
 
-        List<Project> projects = projectDao.findAll();
+        List<ProjectWithDetails> projects = projectDao.findAllWithDetails();
         int count = 0;
 
-        for (Project project : projects) {
+        for (ProjectWithDetails project : projects) {
             // Filter by search text
             if (!searchText.isEmpty()) {
                 if (!project.getProjectName().toLowerCase().contains(searchText)) {
@@ -256,7 +216,7 @@ public class ProjectListPanel extends JPanel {
 
             // Filter by status
             if (!selectedStatus.equals("All Status")) {
-                String projectStatus = getStatusName(project.getStatusId());
+                String projectStatus = project.getStatusName() != null ? project.getStatusName() : "Unknown";
                 if (!projectStatus.equals(selectedStatus)) {
                     continue;
                 }
@@ -265,10 +225,10 @@ public class ProjectListPanel extends JPanel {
             Object[] row = {
                     project.getProjectId(),
                     project.getProjectName(),
-                    getStatusName(project.getStatusId()),
+                    project.getStatusName() != null ? project.getStatusName() : "Unknown",
                     project.getStartDate() != null ? project.getStartDate().toLocalDate().toString() : "-",
                     project.getDeadline() != null ? project.getDeadline().toLocalDate().toString() : "-",
-                    getDepartmentName(project.getDepartmentId())
+                    project.getDepartmentName() != null ? project.getDepartmentName() : "-"
             };
             tableModel.addRow(row);
             count++;
@@ -318,7 +278,7 @@ public class ProjectListPanel extends JPanel {
         errorPanel.setBackground(StyleUtil.BACKGROUND);
         errorPanel.setBorder(StyleUtil.createPaddingBorder(50));
 
-        JLabel errorIcon = new JLabel("âš ï¸");
+        JLabel errorIcon = new JLabel("");
         errorIcon.setFont(new Font("Segoe UI", Font.PLAIN, 72));
         errorIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
 

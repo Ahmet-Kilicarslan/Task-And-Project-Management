@@ -2,6 +2,7 @@ package com.ahmet.tpm.dao;
 
 import com.ahmet.tpm.config.DatabaseConfig;
 import com.ahmet.tpm.models.Project;
+import com.ahmet.tpm.models.ProjectWithDetails;
 
 
 import java.sql.*;
@@ -393,6 +394,203 @@ public class ProjectDao {
         return false;
     }
 
+    /**
+     * Extract ProjectWithDetails from ResultSet (with JOIN data)
+     */
+    private ProjectWithDetails extractProjectWithDetailsFromResultSet(ResultSet rs) throws SQLException {
+        return new ProjectWithDetails(
+                rs.getInt("project_id"),
+                rs.getString("project_name"),
+                rs.getString("description"),
+                rs.getTimestamp("start_date") != null ? rs.getTimestamp("start_date").toLocalDateTime() : null,
+                rs.getTimestamp("deadline") != null ? rs.getTimestamp("deadline").toLocalDateTime() : null,
+                rs.getInt("status_id"),
+                rs.getString("status_name"),
+                rs.getInt("department_id"),
+                rs.getString("department_name"),
+                rs.getInt("created_by"),
+                rs.getString("created_by_username"),
+                rs.getTimestamp("created_at").toLocalDateTime()
+        );
+    }
+
+    /**
+     * Find all projects with department and status names using JOIN
+     */
+    public List<ProjectWithDetails> findAllWithDetails() {
+        String sql = """
+            SELECT 
+                p.project_id,
+                p.project_name,
+                p.description,
+                p.start_date,
+                p.deadline,
+                p.status_id,
+                ps.status_name,
+                p.department_id,
+                d.department_name,
+                p.created_by,
+                u.username as created_by_username,
+                p.created_at
+            FROM Projects p
+            LEFT JOIN Departments d ON p.department_id = d.department_id
+            LEFT JOIN ProjectStatus ps ON p.status_id = ps.status_id
+            LEFT JOIN Users u ON p.created_by = u.user_id
+            ORDER BY p.created_at DESC
+            """;
+
+        List<ProjectWithDetails> projects = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                projects.add(extractProjectWithDetailsFromResultSet(rs));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error finding projects with details: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return projects;
+    }
+
+    /**
+     * Find project by ID with department and status names using JOIN
+     */
+    public ProjectWithDetails findByIdWithDetails(int projectId) {
+        String sql = """
+            SELECT 
+                p.project_id,
+                p.project_name,
+                p.description,
+                p.start_date,
+                p.deadline,
+                p.status_id,
+                ps.status_name,
+                p.department_id,
+                d.department_name,
+                p.created_by,
+                u.username as created_by_username,
+                p.created_at
+            FROM Projects p
+            LEFT JOIN Departments d ON p.department_id = d.department_id
+            LEFT JOIN ProjectStatus ps ON p.status_id = ps.status_id
+            LEFT JOIN Users u ON p.created_by = u.user_id
+            WHERE p.project_id = ?
+            """;
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, projectId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return extractProjectWithDetailsFromResultSet(rs);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error finding project with details: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    /**
+     * Find projects by status with details using JOIN
+     */
+    public List<ProjectWithDetails> findByStatusWithDetails(int statusId) {
+        String sql = """
+            SELECT 
+                p.project_id,
+                p.project_name,
+                p.description,
+                p.start_date,
+                p.deadline,
+                p.status_id,
+                ps.status_name,
+                p.department_id,
+                d.department_name,
+                p.created_by,
+                u.username as created_by_username,
+                p.created_at
+            FROM Projects p
+            LEFT JOIN Departments d ON p.department_id = d.department_id
+            LEFT JOIN ProjectStatus ps ON p.status_id = ps.status_id
+            LEFT JOIN Users u ON p.created_by = u.user_id
+            WHERE p.status_id = ?
+            ORDER BY p.created_at DESC
+            """;
+
+        List<ProjectWithDetails> projects = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, statusId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                projects.add(extractProjectWithDetailsFromResultSet(rs));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error finding projects by status with details: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return projects;
+    }
+
+    /**
+     * Search projects by name with details using JOIN
+     */
+    public List<ProjectWithDetails> searchByNameWithDetails(String searchTerm) {
+        String sql = """
+            SELECT 
+                p.project_id,
+                p.project_name,
+                p.description,
+                p.start_date,
+                p.deadline,
+                p.status_id,
+                ps.status_name,
+                p.department_id,
+                d.department_name,
+                p.created_by,
+                u.username as created_by_username,
+                p.created_at
+            FROM Projects p
+            LEFT JOIN Departments d ON p.department_id = d.department_id
+            LEFT JOIN ProjectStatus ps ON p.status_id = ps.status_id
+            LEFT JOIN Users u ON p.created_by = u.user_id
+            WHERE LOWER(p.project_name) LIKE LOWER(?)
+            ORDER BY p.created_at DESC
+            """;
+
+        List<ProjectWithDetails> projects = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, "%" + searchTerm + "%");
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                projects.add(extractProjectWithDetailsFromResultSet(rs));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error searching projects with details: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return projects;
+    }
 
 
 

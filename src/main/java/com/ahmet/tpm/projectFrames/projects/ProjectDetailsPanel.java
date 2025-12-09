@@ -1,13 +1,11 @@
 package com.ahmet.tpm.projectFrames.projects;
 
 import com.ahmet.tpm.dao.ProjectDao;
-import com.ahmet.tpm.dao.ProjectStatusDao;
-import com.ahmet.tpm.dao.UserDao;
 import com.ahmet.tpm.dao.TaskDao;
-import com.ahmet.tpm.dao.DepartmentDao;
 import com.ahmet.tpm.dao.ProjectMemberDao;
 import com.ahmet.tpm.projectFrames.MainFrame;
 import com.ahmet.tpm.models.Project;
+import com.ahmet.tpm.models.ProjectWithDetails;
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
 import com.ahmet.tpm.utils.UIHelper;
@@ -23,14 +21,12 @@ public class ProjectDetailsPanel extends JPanel {
 
     // DAOs
     private ProjectDao projectDao;
-    private ProjectStatusDao statusDao;
-    private UserDao userDao;
     private TaskDao taskDao;
-    private DepartmentDao departmentDao;
     private ProjectMemberDao projectMemberDao;
 
     // Current project
     private Project currentProject;
+    private ProjectWithDetails currentProjectDetails;
 
     // UI Components
     private JLabel lblProjectName;
@@ -50,10 +46,7 @@ public class ProjectDetailsPanel extends JPanel {
         this.parentModule = parentModule;
         this.mainFrame = mainFrame;
         this.projectDao = new ProjectDao();
-        this.statusDao = new ProjectStatusDao();
-        this.userDao = new UserDao();
         this.taskDao = new TaskDao();
-        this.departmentDao = new DepartmentDao();
         this.projectMemberDao = new ProjectMemberDao();
 
         setLayout(new BorderLayout());
@@ -84,7 +77,7 @@ public class ProjectDetailsPanel extends JPanel {
         ));
 
         // Back button
-        JButton btnBack = ComponentFactory.createSecondaryButton("← Back to List");
+        JButton btnBack = ComponentFactory.createSecondaryButton("Back to List");
         btnBack.addActionListener(e -> parentModule.showProjectList());
         panel.add(btnBack, BorderLayout.WEST);
 
@@ -92,13 +85,13 @@ public class ProjectDetailsPanel extends JPanel {
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actionPanel.setBackground(StyleUtil.SURFACE);
 
-        JButton btnEdit = ComponentFactory.createPrimaryButton("✏️ Edit");
+        JButton btnEdit = ComponentFactory.createPrimaryButton("Edit");
         btnEdit.addActionListener(e -> editProject());
 
-        JButton btnMembers = ComponentFactory.createSecondaryButton("👥 Members");
+        JButton btnMembers = ComponentFactory.createSecondaryButton("Members");
         btnMembers.addActionListener(e -> manageMembers());
 
-        JButton btnDelete = ComponentFactory.createDangerButton("🗑️ Delete");
+        JButton btnDelete = ComponentFactory.createDangerButton("Delete");
         btnDelete.addActionListener(e -> deleteProject());
 
         actionPanel.add(btnEdit);
@@ -224,7 +217,7 @@ public class ProjectDetailsPanel extends JPanel {
         card.setLayout(new BorderLayout(0, 15));
         card.setMaximumSize(new Dimension(800, 150));
 
-        JLabel titleLabel = ComponentFactory.createHeadingLabel("📊 Task Statistics");
+        JLabel titleLabel = ComponentFactory.createHeadingLabel("Task Statistics");
         card.add(titleLabel, BorderLayout.NORTH);
 
         JPanel statsGrid = new JPanel(new GridLayout(1, 3, 20, 0));
@@ -274,8 +267,9 @@ public class ProjectDetailsPanel extends JPanel {
 
     public void loadProject(int projectId) throws SQLException {
         currentProject = projectDao.findById(projectId);
+        currentProjectDetails = projectDao.findByIdWithDetails(projectId);
 
-        if (currentProject == null) {
+        if (currentProject == null || currentProjectDetails == null) {
             UIHelper.showError(mainFrame, "Project not found!");
             parentModule.showProjectList();
             return;
@@ -288,38 +282,34 @@ public class ProjectDetailsPanel extends JPanel {
 
     private void displayProjectData() throws SQLException {
         // Project Name
-        lblProjectName.setText("📄 " + currentProject.getProjectName());
+        lblProjectName.setText(" " + currentProjectDetails.getProjectName());
 
-        // Status
-        var status = statusDao.findById(currentProject.getStatusId());
-        lblStatus.setText(status != null ? status.getStatusName() : "Unknown");
+        // Status - from JOIN
+        lblStatus.setText(currentProjectDetails.getStatusName() != null ?
+                currentProjectDetails.getStatusName() : "Unknown");
 
         // Dates
-        lblStartDate.setText(currentProject.getStartDate() != null ?
-                currentProject.getStartDate().toLocalDate().toString() : "Not set");
+        lblStartDate.setText(currentProjectDetails.getStartDate() != null ?
+                currentProjectDetails.getStartDate().toLocalDate().toString() : "Not set");
 
-        lblDeadline.setText(currentProject.getDeadline() != null ?
-                currentProject.getDeadline().toLocalDate().toString() : "Not set");
+        lblDeadline.setText(currentProjectDetails.getDeadline() != null ?
+                currentProjectDetails.getDeadline().toLocalDate().toString() : "Not set");
 
-        // Department
-        if (currentProject.getDepartmentId() != null) {
-            var department = departmentDao.findById(currentProject.getDepartmentId());
-            lblDepartment.setText(department != null ? department.getDepartmentName() : "Unknown");
-        } else {
-            lblDepartment.setText("No department assigned");
-        }
+        // Department - from JOIN
+        lblDepartment.setText(currentProjectDetails.getDepartmentName() != null ?
+                currentProjectDetails.getDepartmentName() : "No department assigned");
 
-        // Creator
-        var creator = userDao.findById(currentProject.getCreatedBy());
-        lblCreatedBy.setText(creator != null ? creator.getFullName() : "Unknown");
+        // Creator - from JOIN
+        lblCreatedBy.setText(currentProjectDetails.getCreatedByUsername() != null ?
+                currentProjectDetails.getCreatedByUsername() : "Unknown");
 
         // Created At
-        lblCreatedAt.setText(currentProject.getCreatedAt() != null ?
-                currentProject.getCreatedAt().toString() : "-");
+        lblCreatedAt.setText(currentProjectDetails.getCreatedAt() != null ?
+                currentProjectDetails.getCreatedAt().toString() : "-");
 
         // Description
-        txtDescription.setText(currentProject.getDescription() != null ?
-                currentProject.getDescription() : "No description provided.");
+        txtDescription.setText(currentProjectDetails.getDescription() != null ?
+                currentProjectDetails.getDescription() : "No description provided.");
     }
 
     private void loadTaskStatistics() {
