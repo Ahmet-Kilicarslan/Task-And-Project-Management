@@ -77,10 +77,14 @@ public class TaskDashboard extends JPanel {
     }
 
     private JPanel createWelcomePanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(StyleUtil.BACKGROUND);
         panel.setMaximumSize(new Dimension(1100, 100));
+
+        // Left side - Welcome text
+        JPanel textPanel = new JPanel();
+        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+        textPanel.setBackground(StyleUtil.BACKGROUND);
 
         JLabel lblWelcome = new JLabel("Welcome back, " + mainFrame.getCurrentUsername() + "!");
         lblWelcome.setFont(StyleUtil.FONT_LARGE);
@@ -92,9 +96,16 @@ public class TaskDashboard extends JPanel {
         lblSubtitle.setForeground(StyleUtil.TEXT_SECONDARY);
         lblSubtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        panel.add(lblWelcome);
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(lblSubtitle);
+        textPanel.add(lblWelcome);
+        textPanel.add(Box.createVerticalStrut(10));
+        textPanel.add(lblSubtitle);
+
+        panel.add(textPanel, BorderLayout.WEST);
+
+        // Right side - Refresh button
+        JButton btnRefresh = ComponentFactory.createSecondaryButton("Refresh");
+        btnRefresh.addActionListener(e -> refreshDashboard());
+        panel.add(btnRefresh, BorderLayout.EAST);
 
         return panel;
     }
@@ -310,5 +321,9 @@ public class TaskDashboard extends JPanel {
     public void refreshData() {
         loadStatistics();
         loadRecentTasks();
+    }
+
+    public void refreshDashboard() {
+        refreshData();
     }
 }

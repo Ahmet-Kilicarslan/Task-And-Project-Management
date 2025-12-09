@@ -29,10 +29,10 @@ public class DepartmentDao {
 
             stmt.setString(1, department.getDepartmentName());
             stmt.executeUpdate();
-            System.out.println("✓ Department inserted successfully!");
+            System.out.println("âœ“ Department inserted successfully!");
 
         } catch (SQLException e) {
-            System.err.println("✗ Error inserting department: " + e.getMessage());
+            System.err.println(" Error inserting department: " + e.getMessage());
         }
     }
 
@@ -53,13 +53,13 @@ public class DepartmentDao {
                 if (generatedKeys.next()) {
                     Integer generatedId = generatedKeys.getInt(1);
                     department.setDepartmentId(generatedId);
-                    System.out.println("✓ Department inserted with ID: " + generatedId);
+                    System.out.println("âœ“ Department inserted with ID: " + generatedId);
                     return generatedId;
                 }
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error inserting department: " + e.getMessage());
+            System.err.println(" Error inserting department: " + e.getMessage());
         }
         return null;
     }
@@ -83,7 +83,7 @@ public class DepartmentDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error finding department: " + e.getMessage());
+            System.err.println(" Error finding department: " + e.getMessage());
         }
         return null;
     }
@@ -106,7 +106,7 @@ public class DepartmentDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error finding all departments: " + e.getMessage());
+            System.err.println(" Error finding all departments: " + e.getMessage());
         }
 
         return departments;
@@ -130,7 +130,7 @@ public class DepartmentDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error finding department by name: " + e.getMessage());
+            System.err.println(" Error finding department by name: " + e.getMessage());
         }
         return null;
     }
@@ -152,13 +152,13 @@ public class DepartmentDao {
             int rowsUpdated = stmt.executeUpdate();
 
             if (rowsUpdated > 0) {
-                System.out.println("✓ Department updated successfully!");
+                System.out.println("âœ“ Department updated successfully!");
             } else {
-                System.out.println("⚠ No department found with ID: " + department.getDepartmentId());
+                System.out.println("âš  No department found with ID: " + department.getDepartmentId());
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error updating department: " + e.getMessage());
+            System.err.println(" Error updating department: " + e.getMessage());
         }
     }
 
@@ -176,13 +176,13 @@ public class DepartmentDao {
             int rowsDeleted = stmt.executeUpdate();
 
             if (rowsDeleted > 0) {
-                System.out.println("✓ Department deleted successfully!");
+                System.out.println("âœ“ Department deleted successfully!");
             } else {
-                System.out.println("⚠ No department found with ID: " + id);
+                System.out.println("âš  No department found with ID: " + id);
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error deleting department: " + e.getMessage());
+            System.err.println(" Error deleting department: " + e.getMessage());
         }
     }
 
@@ -199,7 +199,7 @@ public class DepartmentDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error counting departments: " + e.getMessage());
+            System.err.println(" Error counting departments: " + e.getMessage());
         }
         return 0;
     }
@@ -215,7 +215,7 @@ public class DepartmentDao {
             return rs.next();
 
         } catch (SQLException e) {
-            System.err.println("✗ Error checking department existence: " + e.getMessage());
+            System.err.println(" Error checking department existence: " + e.getMessage());
         }
         return false;
     }

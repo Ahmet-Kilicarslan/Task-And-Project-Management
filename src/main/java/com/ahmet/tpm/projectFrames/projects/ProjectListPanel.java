@@ -1,7 +1,9 @@
 package com.ahmet.tpm.projectFrames.projects;
 
+import com.ahmet.tpm.dao.DepartmentDao;
 import com.ahmet.tpm.dao.ProjectDao;
 import com.ahmet.tpm.dao.ProjectStatusDao;
+import com.ahmet.tpm.models.Department;
 import com.ahmet.tpm.projectFrames.MainFrame;
 import com.ahmet.tpm.models.Project;
 import com.ahmet.tpm.utils.ComponentFactory;
@@ -20,6 +22,7 @@ public class ProjectListPanel extends JPanel {
     // DAOs
     private ProjectDao projectDao;
     private ProjectStatusDao statusDao;
+    private DepartmentDao departmentDao;
 
     // UI Components
     private JTable projectTable;
@@ -32,6 +35,7 @@ public class ProjectListPanel extends JPanel {
         this.mainFrame = mainFrame;
         this.projectDao = new ProjectDao();
         this.statusDao = new ProjectStatusDao();
+        this.departmentDao = new DepartmentDao();
 
         setLayout(new BorderLayout());
         setBackground(StyleUtil.BACKGROUND);
@@ -42,7 +46,7 @@ public class ProjectListPanel extends JPanel {
         try {
             loadProjects();
         } catch (Exception e) {
-            System.err.println("⚠ Warning: Could not load projects. Database may not be configured.");
+            System.err.println("âš  Warning: Could not load projects. Database may not be configured.");
             System.err.println("Please check your .env file and database connection.");
             showDatabaseError();
         }
@@ -205,11 +209,32 @@ public class ProjectListPanel extends JPanel {
     }
 
     private String getDepartmentName(Integer departmentId) {
+        System.out.println("=== DEBUG getDepartmentName ===");
+        System.out.println("Department ID: " + departmentId);
+
         if (departmentId == null) {
+            System.out.println("Department ID is NULL, returning '-'");
             return "-";
         }
-        // You'll need to inject DepartmentDao or pass department name from Project
-        return "Dept " + departmentId;  // Placeholder - TODO: Load actual department name
+
+        try {
+            Department department = departmentDao.findById(departmentId);
+            System.out.println("Department object: " + department);
+
+            if (department != null) {
+                String name = department.getDepartmentName();
+                System.out.println("Department name: " + name);
+                return name;
+            } else {
+                System.out.println("Department not found in database for ID: " + departmentId);
+            }
+        } catch (Exception e) {
+            System.err.println("Exception in getDepartmentName: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        System.out.println("Returning fallback: Dept " + departmentId);
+        return "Dept " + departmentId;  // Fallback
     }
 
     private void filterProjects() {
@@ -293,7 +318,7 @@ public class ProjectListPanel extends JPanel {
         errorPanel.setBackground(StyleUtil.BACKGROUND);
         errorPanel.setBorder(StyleUtil.createPaddingBorder(50));
 
-        JLabel errorIcon = new JLabel("⚠️");
+        JLabel errorIcon = new JLabel("âš ï¸");
         errorIcon.setFont(new Font("Segoe UI", Font.PLAIN, 72));
         errorIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
 

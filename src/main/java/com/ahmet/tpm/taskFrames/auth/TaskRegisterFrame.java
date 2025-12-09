@@ -55,11 +55,7 @@ public class TaskRegisterFrame extends JFrame {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(40, 50, 40, 50));
 
         // Icon
-        JLabel lblIcon = new JLabel("✓");
-        lblIcon.setFont(new Font("Segoe UI", Font.BOLD, 42));
-        lblIcon.setForeground(StyleUtil.SUCCESS);
-        lblIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
-        mainPanel.add(lblIcon);
+
         mainPanel.add(Box.createVerticalStrut(5));
 
         // Title

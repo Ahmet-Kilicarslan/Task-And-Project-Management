@@ -64,10 +64,10 @@ public class ManageMembersDialog extends JDialog {
     }
 
     private void initializeDialog() {
-        setSize(800, 600);
+        setSize(800, 700);
         setLocationRelativeTo(mainFrame);
         setLayout(new BorderLayout());
-        setResizable(false);
+        setResizable(true);
 
         // Header panel
         JPanel headerPanel = createHeaderPanel();
@@ -103,7 +103,7 @@ public class ManageMembersDialog extends JDialog {
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setBackground(StyleUtil.PRIMARY_LIGHT);
 
-        lblProjectName = ComponentFactory.createHeadingLabel("👥 " + project.getProjectName());
+        lblProjectName = ComponentFactory.createHeadingLabel( project.getProjectName());
         lblProjectName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         lblMemberCount = ComponentFactory.createBodyLabel("Total Members: 0");
@@ -163,10 +163,10 @@ public class ManageMembersDialog extends JDialog {
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         actionPanel.setBackground(StyleUtil.SURFACE);
 
-        JButton btnUpdateRole = ComponentFactory.createSecondaryButton("✏️ Update Role");
+        JButton btnUpdateRole = ComponentFactory.createSecondaryButton("Update Role");
         btnUpdateRole.addActionListener(e -> updateMemberRole());
 
-        JButton btnRemove = ComponentFactory.createDangerButton("🗑️ Remove Member");
+        JButton btnRemove = ComponentFactory.createDangerButton("Remove Member");
         btnRemove.addActionListener(e -> removeMember());
 
         actionPanel.add(btnUpdateRole);
@@ -187,21 +187,25 @@ public class ManageMembersDialog extends JDialog {
         ));
 
         // Title
-        JLabel titleLabel = ComponentFactory.createHeadingLabel("➕ Add New Member");
+        JLabel titleLabel = ComponentFactory.createHeadingLabel("Add New Member");
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createVerticalStrut(15));
 
-        // Form panel
-        JPanel formPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        // Form panel with better layout
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
         formPanel.setBackground(StyleUtil.BACKGROUND);
         formPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // User selection
+        // User selection row
+        JPanel userRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        userRow.setBackground(StyleUtil.BACKGROUND);
+
         JLabel lblUser = ComponentFactory.createBodyLabel("Select User:");
         cmbUsers = new JComboBox<>();
         cmbUsers.setFont(StyleUtil.FONT_BODY);
-        cmbUsers.setPreferredSize(new Dimension(250, 35));
+        cmbUsers.setPreferredSize(new Dimension(300, 35));
         cmbUsers.setBackground(Color.WHITE);
         cmbUsers.setForeground(StyleUtil.TEXT_PRIMARY);
 
@@ -218,11 +222,19 @@ public class ManageMembersDialog extends JDialog {
             }
         });
 
-        // Role input
+        userRow.add(lblUser);
+        userRow.add(cmbUsers);
+        formPanel.add(userRow);
+        formPanel.add(Box.createVerticalStrut(10));
+
+        // Role row
+        JPanel roleRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        roleRow.setBackground(StyleUtil.BACKGROUND);
+
         JLabel lblRole = ComponentFactory.createBodyLabel("Role:");
         txtRole = new JTextField(15);
         txtRole.setFont(StyleUtil.FONT_BODY);
-        txtRole.setPreferredSize(new Dimension(200, 35));
+        txtRole.setPreferredSize(new Dimension(300, 35));
         txtRole.setBackground(Color.WHITE);
         txtRole.setForeground(StyleUtil.TEXT_PRIMARY);
         txtRole.setBorder(BorderFactory.createCompoundBorder(
@@ -230,17 +242,21 @@ public class ManageMembersDialog extends JDialog {
                 BorderFactory.createEmptyBorder(5, 8, 5, 8)
         ));
 
-        // Add button
-        JButton btnAdd = ComponentFactory.createPrimaryButton("➕ Add Member");
+        roleRow.add(lblRole);
+        roleRow.add(txtRole);
+        formPanel.add(roleRow);
+        formPanel.add(Box.createVerticalStrut(15));
+
+        // Button row
+        JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        buttonRow.setBackground(StyleUtil.BACKGROUND);
+
+        JButton btnAdd = ComponentFactory.createPrimaryButton("Add Member");
+        btnAdd.setPreferredSize(new Dimension(150, 40));
         btnAdd.addActionListener(e -> addMember());
 
-        formPanel.add(lblUser);
-        formPanel.add(cmbUsers);
-        formPanel.add(Box.createHorizontalStrut(10));
-        formPanel.add(lblRole);
-        formPanel.add(txtRole);
-        formPanel.add(Box.createHorizontalStrut(10));
-        formPanel.add(btnAdd);
+        buttonRow.add(btnAdd);
+        formPanel.add(buttonRow);
 
         panel.add(formPanel);
 
@@ -252,7 +268,7 @@ public class ManageMembersDialog extends JDialog {
         panel.setBackground(StyleUtil.SURFACE);
         panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, StyleUtil.BORDER));
 
-        JButton btnClose = ComponentFactory.createSecondaryButton("✓ Done");
+        JButton btnClose = ComponentFactory.createSecondaryButton("Done");
         btnClose.addActionListener(e -> {
             try {
                 parentModule.onProjectUpdated();

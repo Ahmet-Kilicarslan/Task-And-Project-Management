@@ -47,12 +47,7 @@ public class TaskLoginFrame extends JFrame {
         mainPanel.setBackground(Color.WHITE);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(60, 50, 60, 50));
 
-        // System Icon/Logo
-        JLabel lblIcon = new JLabel("✓");
-        lblIcon.setFont(new Font("Segoe UI", Font.BOLD, 48));
-        lblIcon.setForeground(StyleUtil.SUCCESS);
-        lblIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
-        mainPanel.add(lblIcon);
+
         mainPanel.add(Box.createVerticalStrut(10));
 
         // Title
