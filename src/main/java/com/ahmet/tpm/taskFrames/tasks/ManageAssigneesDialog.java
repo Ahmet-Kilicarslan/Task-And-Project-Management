@@ -1,6 +1,6 @@
 package com.ahmet.tpm.taskFrames.tasks;
-import com.ahmet.tpm.service.NotificationService;
 
+import com.ahmet.tpm.service.NotificationService;
 import com.ahmet.tpm.dao.*;
 import com.ahmet.tpm.taskFrames.TaskMainFrame;
 import com.ahmet.tpm.models.*;
@@ -15,9 +15,7 @@ import java.util.List;
 
 public class ManageAssigneesDialog extends JDialog {
 
-
-    private NotificationService notificationService = new NotificationService();
-
+    private NotificationService notificationService;
 
     private TasksModulePanel parentModule;
     private TaskMainFrame mainFrame;
@@ -39,17 +37,20 @@ public class ManageAssigneesDialog extends JDialog {
     private JLabel lblTaskName;
     private JLabel lblAssigneeCount;
 
-
-
     public ManageAssigneesDialog(TaskMainFrame mainFrame, TasksModulePanel parentModule, int taskId) {
         super(mainFrame, "Manage Task Assignees", true);
         this.mainFrame = mainFrame;
         this.parentModule = parentModule;
         this.taskId = taskId;
+
+        // Initialize DAOs
         this.taskMemberDao = new TaskMemberDao();
         this.userDao = new UserDao();
         this.taskDao = new TaskDao();
         this.projectMemberDao = new ProjectMemberDao();
+
+        // Initialize notification service
+        this.notificationService = new NotificationService();
 
         // Load task
         this.task = taskDao.findById(taskId);
@@ -302,6 +303,8 @@ public class ManageAssigneesDialog extends JDialog {
                 // All project members are already assigned
                 cmbUsers.addItem(null);
                 cmbUsers.setEnabled(false);
+            } else {
+                cmbUsers.setEnabled(true);
             }
 
         } catch (SQLException e) {
@@ -312,6 +315,7 @@ public class ManageAssigneesDialog extends JDialog {
         }
     }
 
+    // ============ ENHANCED ADD ASSIGNEE WITH NOTIFICATION ============
     private void addAssignee() {
         // Validation
         User selectedUser = (User) cmbUsers.getSelectedItem();
@@ -342,26 +346,45 @@ public class ManageAssigneesDialog extends JDialog {
             return;
         }
 
-        // Add assignee
+        // Add assignee to database
         try {
             TaskMember newAssignee = new TaskMember(taskId, selectedUser.getUserId());
             taskMemberDao.insert(newAssignee);
 
-            // ============ BİLDİRİM GÖNDER - BAŞLANGIÇ ============
+            // ============ STEP 1: SEND NOTIFICATION TO ASSIGNED USER ============
+            String assignerName = mainFrame.getCurrentUsername();
+
             notificationService.notifyTaskAssignment(
                     taskId,
                     selectedUser.getUserId(),
                     task.getTaskName(),
-                    mainFrame.getCurrentUsername()
+                    assignerName
             );
-            // ============ BİLDİRİM GÖNDER - BİTİŞ ============
+
+            System.out.println("✓ Assignment notification sent to: " + selectedUser.getFullName());
+
+            // ============ STEP 2: OPTIONALLY NOTIFY OTHER TASK MEMBERS ============
+            // Uncomment this if you want to notify existing assignees about new member
+            /*
+            List<Integer> existingAssignees = taskMemberDao.getUserIdsForTask(taskId);
+            for (int userId : existingAssignees) {
+                if (userId != selectedUser.getUserId()) {
+                    notificationService.notifyTaskUpdate(
+                        taskId,
+                        task.getTaskName(),
+                        assignerName,
+                        "added " + selectedUser.getFullName() + " to task"
+                    );
+                }
+            }
+            */
 
             JOptionPane.showMessageDialog(this,
-                    "Assignee added successfully!",
+                    selectedUser.getFullName() + " has been assigned to the task!",
                     "Success",
                     JOptionPane.INFORMATION_MESSAGE);
 
-            // Refresh
+            // Refresh UI
             loadAssignees();
             loadAvailableUsers();
 
@@ -374,6 +397,7 @@ public class ManageAssigneesDialog extends JDialog {
         }
     }
 
+    // ============ ENHANCED REMOVE ASSIGNEE WITH NOTIFICATION ============
     private void removeAssignee() {
         int selectedRow = assigneesTable.getSelectedRow();
         if (selectedRow == -1) {
@@ -384,7 +408,7 @@ public class ManageAssigneesDialog extends JDialog {
             return;
         }
 
-        // Get assignee info
+        // Get assignee info from table
         String userName = (String) tableModel.getValueAt(selectedRow, 1);
         int taskMemberId = (int) tableModel.getValueAt(selectedRow, 0);
 
@@ -399,14 +423,49 @@ public class ManageAssigneesDialog extends JDialog {
 
         if (confirm == JOptionPane.YES_OPTION) {
             try {
+                // Get userId before deletion
                 int userId = getUserIdFromTaskMemberId(taskMemberId);
+
+                if (userId == -1) {
+                    throw new Exception("Could not find user ID for selected assignee");
+                }
+
+                // ============ STEP 1: REMOVE FROM DATABASE ============
                 taskMemberDao.delete(taskId, userId);
 
+                // ============ STEP 2: SEND NOTIFICATION TO REMOVED USER ============
+                String removerName = mainFrame.getCurrentUsername();
+
+                // Create custom notification for removal
+                notificationService.notifyTaskUpdate(
+                        taskId,
+                        task.getTaskName(),
+                        removerName,
+                        "removed you from task"
+                );
+
+                System.out.println("✓ Removal notification sent to: " + userName);
+
+                // ============ STEP 3: OPTIONALLY NOTIFY OTHER TASK MEMBERS ============
+                // Uncomment if you want to notify remaining assignees
+                /*
+                List<Integer> remainingAssignees = taskMemberDao.getUserIdsForTask(taskId);
+                for (int remainingUserId : remainingAssignees) {
+                    notificationService.notifyTaskUpdate(
+                        taskId,
+                        task.getTaskName(),
+                        removerName,
+                        "removed " + userName + " from task"
+                    );
+                }
+                */
+
                 JOptionPane.showMessageDialog(this,
-                        "Assignee removed successfully!",
+                        userName + " has been removed from the task.",
                         "Success",
                         JOptionPane.INFORMATION_MESSAGE);
 
+                // Refresh UI
                 loadAssignees();
                 loadAvailableUsers();
 
@@ -432,6 +491,4 @@ public class ManageAssigneesDialog extends JDialog {
         }
         return -1;
     }
-
-
 }

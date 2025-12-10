@@ -15,6 +15,7 @@ import com.ahmet.tpm.service.NotificationService;
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class EditProjectDialog extends JDialog {
@@ -39,6 +40,12 @@ public class EditProjectDialog extends JDialog {
     private JComboBox<Department> cmbDepartment;
     private JTextArea txtDescription;
 
+    // ============ CHANGE TRACKING VARIABLES ============
+    private int oldStatusId;
+    private String oldProjectName;
+    private LocalDateTime oldDeadline;
+    private LocalDateTime oldStartDate;
+
     public EditProjectDialog(MainFrame mainFrame, ProjectsModulePanel parentModule, int projectId) {
         super(mainFrame, "Edit Project", true);  // true = modal
         this.mainFrame = mainFrame;
@@ -60,6 +67,9 @@ public class EditProjectDialog extends JDialog {
         initializeDialog();
         loadDropdownData();
         populateFormWithProjectData();
+
+        // ============ STORE ORIGINAL VALUES FOR CHANGE DETECTION ============
+        storeOriginalValues();
     }
 
     private void initializeDialog() {
@@ -84,7 +94,7 @@ public class EditProjectDialog extends JDialog {
         panel.setBorder(StyleUtil.createPaddingBorder(20));
 
         // Title
-        JLabel titleLabel = ComponentFactory.createHeadingLabel(" Edit Project");
+        JLabel titleLabel = ComponentFactory.createHeadingLabel("Edit Project");
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createVerticalStrut(20));
@@ -181,7 +191,6 @@ public class EditProjectDialog extends JDialog {
         field.setMaximumSize(new Dimension(550, 40));
         field.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-
         if (field instanceof JTextField) {
             field.setBackground(Color.WHITE);
             field.setForeground(StyleUtil.TEXT_PRIMARY);
@@ -205,7 +214,7 @@ public class EditProjectDialog extends JDialog {
         panel.setBackground(StyleUtil.SURFACE);
         panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, StyleUtil.BORDER));
 
-        JButton btnSave = ComponentFactory.createPrimaryButton(" Save Changes");
+        JButton btnSave = ComponentFactory.createPrimaryButton("Save Changes");
         btnSave.addActionListener(e -> saveChanges());
 
         JButton btnCancel = ComponentFactory.createSecondaryButton("Cancel");
@@ -270,6 +279,20 @@ public class EditProjectDialog extends JDialog {
         }
     }
 
+    // ============ STORE ORIGINAL VALUES FOR CHANGE DETECTION ============
+    private void storeOriginalValues() {
+        oldStatusId = project.getStatusId();
+        oldProjectName = project.getProjectName();
+        oldDeadline = project.getDeadline();
+        oldStartDate = project.getStartDate();
+
+        System.out.println("Original values stored:");
+        System.out.println("  Status ID: " + oldStatusId);
+        System.out.println("  Project Name: " + oldProjectName);
+        System.out.println("  Deadline: " + oldDeadline);
+    }
+
+    // ============ ENHANCED SAVE WITH CHANGE DETECTION & NOTIFICATIONS ============
     private void saveChanges() {
         // Validate
         if (!validateForm()) {
@@ -277,29 +300,35 @@ public class EditProjectDialog extends JDialog {
         }
 
         try {
-            // Update project object
-            project.setProjectName(txtProjectName.getText().trim());
+            // ============ STEP 1: UPDATE PROJECT OBJECT ============
+            String newProjectName = txtProjectName.getText().trim();
+            project.setProjectName(newProjectName);
 
             // Parse dates - Convert LocalDate to LocalDateTime
             String startDateStr = txtStartDate.getText().trim();
+            LocalDateTime newStartDate = null;
             if (!startDateStr.isEmpty()) {
                 LocalDate date = LocalDate.parse(startDateStr);
-                project.setStartDate(date.atStartOfDay());
+                newStartDate = date.atStartOfDay();
+                project.setStartDate(newStartDate);
             } else {
                 project.setStartDate(null);
             }
 
             String deadlineStr = txtDeadline.getText().trim();
+            LocalDateTime newDeadline = null;
             if (!deadlineStr.isEmpty()) {
                 LocalDate date = LocalDate.parse(deadlineStr);
-                project.setDeadline(date.atTime(23, 59, 59));
+                newDeadline = date.atTime(23, 59, 59);
+                project.setDeadline(newDeadline);
             } else {
                 project.setDeadline(null);
             }
 
             // Status
             ProjectStatus selectedStatus = (ProjectStatus) cmbStatus.getSelectedItem();
-            project.setStatusId(selectedStatus.getStatusId());
+            int newStatusId = selectedStatus.getStatusId();
+            project.setStatusId(newStatusId);
 
             // Department (optional)
             Department selectedDept = (Department) cmbDepartment.getSelectedItem();
@@ -313,8 +342,93 @@ public class EditProjectDialog extends JDialog {
             String description = txtDescription.getText().trim();
             project.setDescription(!description.isEmpty() ? description : null);
 
-            // Update in database
+            // ============ STEP 2: UPDATE IN DATABASE ============
             projectDao.update(project);
+            System.out.println("✓ Project updated in database");
+
+            // ============ STEP 3: DETECT CHANGES & SEND NOTIFICATIONS ============
+            String updaterName = mainFrame.getCurrentUsername();
+            boolean changesDetected = false;
+
+            // Check Status Change
+            if (oldStatusId != newStatusId) {
+                ProjectStatus newStatus = statusDao.findById(newStatusId);
+                String newStatusName = (newStatus != null) ? newStatus.getStatusName() : "Unknown";
+
+                notificationService.notifyProjectStatusChange(
+                        project.getProjectId(),
+                        project.getProjectName(),
+                        newStatusName,
+                        updaterName
+                );
+
+                System.out.println("✓ Status change notification sent: " + oldStatusId + " -> " + newStatusId);
+                changesDetected = true;
+            }
+
+            // Check Project Name Change
+            if (!oldProjectName.equals(newProjectName)) {
+                notificationService.notifyProjectUpdate(
+                        project.getProjectId(),
+                        project.getProjectName(),
+                        updaterName,
+                        "project name"
+                );
+
+                System.out.println("✓ Project name change notification sent");
+                changesDetected = true;
+            }
+
+            // Check Deadline Change
+            boolean deadlineChanged = false;
+            if (oldDeadline == null && newDeadline != null) {
+                // Deadline was added
+                deadlineChanged = true;
+            } else if (oldDeadline != null && newDeadline == null) {
+                // Deadline was removed
+                deadlineChanged = true;
+            } else if (oldDeadline != null && newDeadline != null && !oldDeadline.equals(newDeadline)) {
+                // Deadline was changed
+                deadlineChanged = true;
+            }
+
+            if (deadlineChanged) {
+                notificationService.notifyProjectUpdate(
+                        project.getProjectId(),
+                        project.getProjectName(),
+                        updaterName,
+                        "deadline"
+                );
+
+                System.out.println("✓ Deadline change notification sent");
+                changesDetected = true;
+            }
+
+            // Check Start Date Change
+            boolean startDateChanged = false;
+            if (oldStartDate == null && newStartDate != null) {
+                startDateChanged = true;
+            } else if (oldStartDate != null && newStartDate == null) {
+                startDateChanged = true;
+            } else if (oldStartDate != null && newStartDate != null && !oldStartDate.equals(newStartDate)) {
+                startDateChanged = true;
+            }
+
+            if (startDateChanged) {
+                notificationService.notifyProjectUpdate(
+                        project.getProjectId(),
+                        project.getProjectName(),
+                        updaterName,
+                        "start date"
+                );
+
+                System.out.println("✓ Start date change notification sent");
+                changesDetected = true;
+            }
+
+            if (!changesDetected) {
+                System.out.println("ℹ No significant changes detected - no notifications sent");
+            }
 
             UIHelper.showSuccess(mainFrame, "Project updated successfully!");
 

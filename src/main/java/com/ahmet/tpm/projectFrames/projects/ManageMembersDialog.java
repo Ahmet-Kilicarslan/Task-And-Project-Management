@@ -7,10 +7,9 @@ import com.ahmet.tpm.projectFrames.MainFrame;
 import com.ahmet.tpm.models.ProjectMember;
 import com.ahmet.tpm.models.User;
 import com.ahmet.tpm.models.Project;
-import com.ahmet.tpm.service.NotificationService; // ============ BİLDİRİM İMPORT ============
+import com.ahmet.tpm.service.NotificationService;
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
-import com.ahmet.tpm.service.NotificationService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -23,13 +22,12 @@ public class ManageMembersDialog extends JDialog {
     private ProjectsModulePanel parentModule;
     private MainFrame mainFrame;
 
-
     // DAOs
     private ProjectMemberDao projectMemberDao;
     private UserDao userDao;
     private ProjectDao projectDao;
 
-    // ============ BİLDİRİM SERVİSİ ============
+    // Notification Service
     private NotificationService notificationService;
 
     // Current project
@@ -53,7 +51,7 @@ public class ManageMembersDialog extends JDialog {
         this.userDao = new UserDao();
         this.projectDao = new ProjectDao();
 
-        // ============ BİLDİRİM SERVİSİNİ BAŞLAT ============
+        // Initialize notification service
         this.notificationService = new NotificationService();
 
         // Load project
@@ -112,7 +110,7 @@ public class ManageMembersDialog extends JDialog {
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setBackground(StyleUtil.PRIMARY_LIGHT);
 
-        lblProjectName = ComponentFactory.createHeadingLabel( project.getProjectName());
+        lblProjectName = ComponentFactory.createHeadingLabel(project.getProjectName());
         lblProjectName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         lblMemberCount = ComponentFactory.createBodyLabel("Total Members: 0");
@@ -172,10 +170,10 @@ public class ManageMembersDialog extends JDialog {
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         actionPanel.setBackground(StyleUtil.SURFACE);
 
-        JButton btnUpdateRole = ComponentFactory.createSecondaryButton(" Update Role");
+        JButton btnUpdateRole = ComponentFactory.createSecondaryButton("Update Role");
         btnUpdateRole.addActionListener(e -> updateMemberRole());
 
-        JButton btnRemove = ComponentFactory.createDangerButton(" Remove Member");
+        JButton btnRemove = ComponentFactory.createDangerButton("Remove Member");
         btnRemove.addActionListener(e -> removeMember());
 
         actionPanel.add(btnUpdateRole);
@@ -196,7 +194,7 @@ public class ManageMembersDialog extends JDialog {
         ));
 
         // Title
-        JLabel titleLabel = ComponentFactory.createHeadingLabel(" Add New Member");
+        JLabel titleLabel = ComponentFactory.createHeadingLabel("Add New Member");
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createVerticalStrut(15));
@@ -240,7 +238,7 @@ public class ManageMembersDialog extends JDialog {
         ));
 
         // Add button
-        JButton btnAdd = ComponentFactory.createPrimaryButton(" Add Member");
+        JButton btnAdd = ComponentFactory.createPrimaryButton("Add Member");
         btnAdd.addActionListener(e -> addMember());
 
         formPanel.add(lblUser);
@@ -261,7 +259,7 @@ public class ManageMembersDialog extends JDialog {
         panel.setBackground(StyleUtil.SURFACE);
         panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, StyleUtil.BORDER));
 
-        JButton btnClose = ComponentFactory.createSecondaryButton(" Done");
+        JButton btnClose = ComponentFactory.createSecondaryButton("Done");
         btnClose.addActionListener(e -> {
             try {
                 parentModule.onProjectUpdated();
@@ -315,6 +313,15 @@ public class ManageMembersDialog extends JDialog {
                     cmbUsers.addItem(user);
                 }
             }
+
+            // Enable/disable based on availability
+            if (cmbUsers.getItemCount() == 0) {
+                cmbUsers.addItem(null);
+                cmbUsers.setEnabled(false);
+            } else {
+                cmbUsers.setEnabled(true);
+            }
+
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this,
                     "Error loading users: " + e.getMessage(),
@@ -323,6 +330,7 @@ public class ManageMembersDialog extends JDialog {
         }
     }
 
+    // ============ ENHANCED ADD MEMBER WITH NOTIFICATION ============
     private void addMember() {
         // Validation
         User selectedUser = (User) cmbUsers.getSelectedItem();
@@ -348,33 +356,34 @@ public class ManageMembersDialog extends JDialog {
             return;
         }
 
-        // Add member
+        // Add member to database
         try {
             ProjectMember newMember = new ProjectMember(projectId, selectedUser.getUserId(), role);
             projectMemberDao.insert(newMember);
 
-            // ============ BİLDİRİM GÖNDER - BAŞLANGIÇ ============
+            // ============ SEND NOTIFICATION TO ADDED USER ============
+            String adderName = mainFrame.getCurrentUsername();
+
             notificationService.notifyProjectMemberAdded(
                     projectId,
                     selectedUser.getUserId(),
                     project.getProjectName(),
-                    mainFrame.getCurrentUsername()
+                    adderName
             );
 
-            // ========== ADD THIS LINE ==========
+            System.out.println("✓ Member addition notification sent to: " + selectedUser.getFullName());
+
+            // ============ REFRESH NOTIFICATION BELL ============
             if (mainFrame.getNotificationBell() != null) {
                 mainFrame.getNotificationBell().refreshUnreadCount();
             }
-            // ===================================
-            // ============ BİLDİRİM GÖNDER - BİTİŞ ============
-
 
             JOptionPane.showMessageDialog(this,
-                    "Member added successfully!",
+                    selectedUser.getFullName() + " has been added to the project!",
                     "Success",
                     JOptionPane.INFORMATION_MESSAGE);
 
-            // Refresh
+            // Refresh UI
             loadMembers();
             loadAvailableUsers();
             txtRole.setText("");
@@ -388,6 +397,7 @@ public class ManageMembersDialog extends JDialog {
         }
     }
 
+    // ============ UPDATE MEMBER ROLE (NO NOTIFICATION NEEDED) ============
     private void updateMemberRole() {
         int selectedRow = membersTable.getSelectedRow();
         if (selectedRow == -1) {
@@ -414,7 +424,7 @@ public class ManageMembersDialog extends JDialog {
                 currentRole
         );
 
-        if (newRole != null && !newRole.trim().isEmpty()) {
+        if (newRole != null && !newRole.trim().isEmpty() && !newRole.trim().equals(currentRole)) {
             try {
                 // Get the ProjectMember object
                 ProjectMember member = projectMemberDao.findByProjectAndUser(
@@ -425,8 +435,24 @@ public class ManageMembersDialog extends JDialog {
                 if (member != null) {
                     projectMemberDao.updateRole(projectId, member.getUserId(), newRole.trim());
 
+                    // ============ OPTIONAL: NOTIFY ABOUT ROLE CHANGE ============
+                    // Uncomment if you want to notify the user about their role change
+                    /*
+                    String updaterName = mainFrame.getCurrentUsername();
+                    notificationService.notifyProjectUpdate(
+                        projectId,
+                        project.getProjectName(),
+                        updaterName,
+                        "changed your role to " + newRole.trim()
+                    );
+
+                    if (mainFrame.getNotificationBell() != null) {
+                        mainFrame.getNotificationBell().refreshUnreadCount();
+                    }
+                    */
+
                     JOptionPane.showMessageDialog(this,
-                            "Member role updated successfully!",
+                            userName + "'s role has been updated to: " + newRole.trim(),
                             "Success",
                             JOptionPane.INFORMATION_MESSAGE);
 
@@ -442,6 +468,7 @@ public class ManageMembersDialog extends JDialog {
         }
     }
 
+    // ============ ENHANCED REMOVE MEMBER WITH NOTIFICATION ============
     private void removeMember() {
         int selectedRow = membersTable.getSelectedRow();
         if (selectedRow == -1) {
@@ -466,23 +493,39 @@ public class ManageMembersDialog extends JDialog {
 
         if (confirm == JOptionPane.YES_OPTION) {
             try {
+                // Get userId BEFORE deletion
                 int userId = getUserIdFromMemberId(projectMemberId);
+
+                if (userId == -1) {
+                    throw new Exception("Could not find user ID for selected member");
+                }
+
+                // ============ STEP 1: REMOVE FROM DATABASE ============
                 projectMemberDao.delete(projectId, userId);
 
-                // ============ BİLDİRİM GÖNDER - BAŞLANGIÇ ============
+                // ============ STEP 2: SEND NOTIFICATION TO REMOVED USER ============
+                String removerName = mainFrame.getCurrentUsername();
+
                 notificationService.notifyProjectMemberRemoved(
                         projectId,
                         userId,
                         project.getProjectName(),
-                        mainFrame.getCurrentUsername()
+                        removerName
                 );
-                // ============ BİLDİRİM GÖNDER - BİTİŞ ============
+
+                System.out.println("✓ Member removal notification sent to: " + userName);
+
+                // ============ STEP 3: REFRESH NOTIFICATION BELL ============
+                if (mainFrame.getNotificationBell() != null) {
+                    mainFrame.getNotificationBell().refreshUnreadCount();
+                }
 
                 JOptionPane.showMessageDialog(this,
-                        "Member removed successfully!",
+                        userName + " has been removed from the project.",
                         "Success",
                         JOptionPane.INFORMATION_MESSAGE);
 
+                // Refresh UI
                 loadMembers();
                 loadAvailableUsers();
 
