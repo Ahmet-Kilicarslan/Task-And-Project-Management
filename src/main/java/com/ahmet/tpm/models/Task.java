@@ -19,11 +19,11 @@ public class Task {
 
     public Task(){}
 
-    public Task(int taskId, Integer projectId, String description, String taskName, Integer statusId, Integer priorityId, double estimatedHours,LocalDate dueDate, Integer parentTaskId, Integer createdBy, LocalDateTime createdAt) {
+    public Task(int taskId, Integer projectId, String taskName, String description, Integer statusId, Integer priorityId, double estimatedHours,LocalDate dueDate, Integer parentTaskId, Integer createdBy, LocalDateTime createdAt) {
         this.taskId = taskId;
         this.projectId = projectId;
-        this.description = description;
         this.taskName = taskName;
+        this.description = description;
         this.statusId = statusId;
         this.priorityId = priorityId;
         this.estimatedHours = estimatedHours;

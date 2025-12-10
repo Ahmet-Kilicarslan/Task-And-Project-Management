@@ -83,7 +83,7 @@ public class TaskDetailsPanel extends JPanel {
         ));
 
         // Back button
-        JButton btnBack = ComponentFactory.createSecondaryButton("â† Back to List");
+        JButton btnBack = ComponentFactory.createSecondaryButton("Back to List");
         btnBack.addActionListener(e -> parentModule.showTaskList());
         panel.add(btnBack, BorderLayout.WEST);
 
@@ -371,7 +371,7 @@ public class TaskDetailsPanel extends JPanel {
             try {
                 User user = userDao.findById(member.getUserId());
                 if (user != null) {
-                    sb.append("â€¢ ").append(user.getFullName())
+                    sb.append(" ").append(user.getFullName())
                             .append(" (").append(user.getEmail()).append(")<br>");
                 }
             } catch (SQLException e) {

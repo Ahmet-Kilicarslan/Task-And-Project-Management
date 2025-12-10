@@ -58,7 +58,8 @@ public class TaskListPanel extends JPanel {
     }
 
     private JPanel createToolbar() {
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 15));
+        JPanel toolbar = new JPanel();
+        toolbar.setLayout(new BoxLayout(toolbar, BoxLayout.X_AXIS));
         toolbar.setBackground(StyleUtil.SURFACE);
         toolbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, StyleUtil.BORDER));
 
@@ -71,16 +72,20 @@ public class TaskListPanel extends JPanel {
         JButton btnCreate = ComponentFactory.createPrimaryButton("Create New");
         btnCreate.addActionListener(e -> parentModule.openCreateTaskDialog());
         toolbar.add(btnCreate);
+        toolbar.add(Box.createHorizontalStrut(10));
 
         // Refresh button
         JButton btnRefresh = ComponentFactory.createSecondaryButton("Refresh");
         btnRefresh.addActionListener(e -> refreshData());
         toolbar.add(btnRefresh);
-
         toolbar.add(Box.createHorizontalStrut(20));
 
-        // Search field
+        // Search
+        toolbar.add(new JLabel("Search:"));
+        toolbar.add(Box.createHorizontalStrut(5));
+
         searchField = new JTextField(15);
+        searchField.setMaximumSize(new Dimension(200, 35));
         searchField.setFont(StyleUtil.FONT_BODY);
         searchField.setBackground(Color.WHITE);
         searchField.setForeground(StyleUtil.TEXT_PRIMARY);
@@ -88,39 +93,55 @@ public class TaskListPanel extends JPanel {
                 BorderFactory.createLineBorder(StyleUtil.BORDER),
                 BorderFactory.createEmptyBorder(8, 10, 8, 10)
         ));
-        toolbar.add(new JLabel("Search:"));
         toolbar.add(searchField);
 
+        toolbar.add(Box.createHorizontalStrut(20));
+
         // Project filter
+        toolbar.add(new JLabel("Project:"));
+        toolbar.add(Box.createHorizontalStrut(5));
+
         projectFilter = new JComboBox<>();
         projectFilter.setFont(StyleUtil.FONT_BODY);
         projectFilter.setBackground(Color.WHITE);
         projectFilter.setForeground(StyleUtil.TEXT_PRIMARY);
         loadProjectFilter();
-        toolbar.add(new JLabel("Project:"));
+        projectFilter.setMaximumSize(new Dimension(150, 35));
         toolbar.add(projectFilter);
+
+        toolbar.add(Box.createHorizontalStrut(20));
 
         // Status filter
         statusFilter = new JComboBox<>(new String[]{"All Status", "TODO", "IN PROGRESS", "IN REVIEW", "DONE"});
         statusFilter.setFont(StyleUtil.FONT_BODY);
         statusFilter.setBackground(Color.WHITE);
         statusFilter.setForeground(StyleUtil.TEXT_PRIMARY);
+        statusFilter.setMaximumSize(new Dimension(150, 35));
         toolbar.add(statusFilter);
+
+        toolbar.add(Box.createHorizontalStrut(20));
 
         // Priority filter
         priorityFilter = new JComboBox<>(new String[]{"All Priority", "LOW", "MEDIUM", "HIGH", "CRITICAL"});
         priorityFilter.setFont(StyleUtil.FONT_BODY);
         priorityFilter.setBackground(Color.WHITE);
         priorityFilter.setForeground(StyleUtil.TEXT_PRIMARY);
+        priorityFilter.setMaximumSize(new Dimension(150, 35));
         toolbar.add(priorityFilter);
+
+        toolbar.add(Box.createHorizontalStrut(20));
 
         // Search button
         JButton btnSearch = ComponentFactory.createSecondaryButton("Filter");
         btnSearch.addActionListener(e -> filterTasks());
         toolbar.add(btnSearch);
 
+        // Right side boşluk (her şeyi sola yaslar)
+        toolbar.add(Box.createHorizontalGlue());
+
         return toolbar;
     }
+
 
     private JPanel createTablePanel() {
         JPanel panel = new JPanel(new BorderLayout());

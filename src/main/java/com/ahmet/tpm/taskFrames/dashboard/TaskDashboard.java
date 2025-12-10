@@ -100,11 +100,11 @@ public class TaskDashboard extends JPanel {
         textPanel.add(Box.createVerticalStrut(10));
         textPanel.add(lblSubtitle);
 
-        panel.add(textPanel, BorderLayout.WEST);
-
         // Right side - Refresh button
-        JButton btnRefresh = ComponentFactory.createSecondaryButton("Refresh");
-        btnRefresh.addActionListener(e -> refreshDashboard());
+        JButton btnRefresh = ComponentFactory.createPrimaryButton("Refresh");
+        btnRefresh.addActionListener(e -> refreshData());
+
+        panel.add(textPanel, BorderLayout.WEST);
         panel.add(btnRefresh, BorderLayout.EAST);
 
         return panel;
@@ -117,7 +117,7 @@ public class TaskDashboard extends JPanel {
 
         // My Tasks Card
         JPanel myTasksCard = createStatCard("My Tasks", "0", StyleUtil.PRIMARY, "All assigned to you");
-        lblMyTasks = (JLabel) myTasksCard.getComponent(2);
+        lblMyTasks = (JLabel) myTasksCard.getComponent(2);  // Index 2: title(0), strut(1), value(2)
 
         // TODO Tasks Card
         JPanel todoCard = createStatCard("To Do", "0", StyleUtil.INFO, "Pending tasks");
@@ -182,20 +182,6 @@ public class TaskDashboard extends JPanel {
 
         JLabel titleLabel = ComponentFactory.createHeadingLabel("Recent Tasks");
         headerPanel.add(titleLabel, BorderLayout.WEST);
-
-        JButton btnViewAll = ComponentFactory.createSecondaryButton("View All Tasks");
-        btnViewAll.addActionListener(e -> {
-            // Navigate to Tasks module
-            Container parent = this.getParent();
-            while (parent != null && !(parent instanceof TaskMainFrame)) {
-                parent = parent.getParent();
-            }
-            if (parent instanceof TaskMainFrame) {
-                // Trigger navigation - will be handled by TaskMainFrame
-                System.out.println("Navigate to Tasks module");
-            }
-        });
-        headerPanel.add(btnViewAll, BorderLayout.EAST);
 
         panel.add(headerPanel, BorderLayout.NORTH);
 
@@ -321,9 +307,5 @@ public class TaskDashboard extends JPanel {
     public void refreshData() {
         loadStatistics();
         loadRecentTasks();
-    }
-
-    public void refreshDashboard() {
-        refreshData();
     }
 }
