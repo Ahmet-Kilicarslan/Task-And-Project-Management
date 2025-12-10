@@ -7,6 +7,7 @@ import com.ahmet.tpm.projectFrames.MainFrame;
 import com.ahmet.tpm.models.ProjectMember;
 import com.ahmet.tpm.models.User;
 import com.ahmet.tpm.models.Project;
+import com.ahmet.tpm.service.NotificationService; // ============ BİLDİRİM İMPORT ============
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
 
@@ -25,6 +26,9 @@ public class ManageMembersDialog extends JDialog {
     private ProjectMemberDao projectMemberDao;
     private UserDao userDao;
     private ProjectDao projectDao;
+
+    // ============ BİLDİRİM SERVİSİ ============
+    private NotificationService notificationService;
 
     // Current project
     private int projectId;
@@ -47,6 +51,9 @@ public class ManageMembersDialog extends JDialog {
         this.userDao = new UserDao();
         this.projectDao = new ProjectDao();
 
+        // ============ BİLDİRİM SERVİSİNİ BAŞLAT ============
+        this.notificationService = new NotificationService();
+
         // Load project
         this.project = projectDao.findById(projectId);
         if (this.project == null) {
@@ -64,8 +71,8 @@ public class ManageMembersDialog extends JDialog {
     }
 
     private void initializeDialog() {
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        // not setSize here — use pack later
+        setSize(800, 600);
+        setLocationRelativeTo(mainFrame);
         setLayout(new BorderLayout());
         setResizable(false);
 
@@ -73,18 +80,17 @@ public class ManageMembersDialog extends JDialog {
         JPanel headerPanel = createHeaderPanel();
         add(headerPanel, BorderLayout.NORTH);
 
-        // Center - use BorderLayout and allow components to request preferred sizes
+        // Center - Split into two sections
         JPanel centerPanel = new JPanel(new BorderLayout(0, 15));
         centerPanel.setBackground(StyleUtil.SURFACE);
         centerPanel.setBorder(StyleUtil.createPaddingBorder(20));
 
-        // Current members section (center)
+        // Current members section
         JPanel membersSection = createMembersSection();
         centerPanel.add(membersSection, BorderLayout.CENTER);
 
-        // Add member section (south) - give it only needed height
+        // Add member section
         JPanel addMemberSection = createAddMemberSection();
-        addMemberSection.setPreferredSize(new Dimension(800, 170));
         centerPanel.add(addMemberSection, BorderLayout.SOUTH);
 
         add(centerPanel, BorderLayout.CENTER);
@@ -92,13 +98,6 @@ public class ManageMembersDialog extends JDialog {
         // Button panel
         JPanel buttonPanel = createButtonPanel();
         add(buttonPanel, BorderLayout.SOUTH);
-
-        // Let Swing compute sizes
-        pack();
-
-        // Ensure a sensible minimum size (optional)
-        setSize(Math.max(800, getWidth()), Math.max(600, getHeight()));
-        setLocationRelativeTo(mainFrame);
     }
 
     private JPanel createHeaderPanel() {
@@ -111,7 +110,7 @@ public class ManageMembersDialog extends JDialog {
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setBackground(StyleUtil.PRIMARY_LIGHT);
 
-        lblProjectName = ComponentFactory.createHeadingLabel(project.getProjectName());
+        lblProjectName = ComponentFactory.createHeadingLabel("ðŸ‘¥ " + project.getProjectName());
         lblProjectName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         lblMemberCount = ComponentFactory.createBodyLabel("Total Members: 0");
@@ -127,7 +126,6 @@ public class ManageMembersDialog extends JDialog {
         return panel;
     }
 
-    // createMembersSection() - replace your current method with this
     private JPanel createMembersSection() {
         JPanel panel = new JPanel(new BorderLayout(0, 10));
         panel.setBackground(StyleUtil.SURFACE);
@@ -136,7 +134,7 @@ public class ManageMembersDialog extends JDialog {
         JLabel titleLabel = ComponentFactory.createHeadingLabel("Current Members");
         panel.add(titleLabel, BorderLayout.NORTH);
 
-        // Table model & table
+        // Table
         String[] columnNames = {"Member ID", "User", "Email", "Role in Project"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
@@ -156,32 +154,26 @@ public class ManageMembersDialog extends JDialog {
         membersTable.setGridColor(StyleUtil.BORDER);
         membersTable.setSelectionBackground(StyleUtil.PRIMARY_LIGHT);
         membersTable.setSelectionForeground(StyleUtil.TEXT_PRIMARY);
-        membersTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
-        // Column widths (try/catch in case columnModel not ready)
-        try {
-            membersTable.getColumnModel().getColumn(0).setPreferredWidth(80);
-            membersTable.getColumnModel().getColumn(1).setPreferredWidth(150);
-            membersTable.getColumnModel().getColumn(2).setPreferredWidth(200);
-            membersTable.getColumnModel().getColumn(3).setPreferredWidth(150);
-        } catch (Exception ignored) {}
+        // Column widths
+        membersTable.getColumnModel().getColumn(0).setPreferredWidth(80);   // Member ID
+        membersTable.getColumnModel().getColumn(1).setPreferredWidth(150);  // User
+        membersTable.getColumnModel().getColumn(2).setPreferredWidth(200);  // Email
+        membersTable.getColumnModel().getColumn(3).setPreferredWidth(150);  // Role
 
         JScrollPane scrollPane = new JScrollPane(membersTable);
         scrollPane.setBorder(StyleUtil.createLineBorder());
-        // CRITICAL: force a preferred size so the table area is visible
-        scrollPane.setPreferredSize(new Dimension(760, 300));
+        scrollPane.setPreferredSize(new Dimension(750, 250));
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        // Action buttons
+        // Action buttons for selected member
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         actionPanel.setBackground(StyleUtil.SURFACE);
 
-        JButton btnUpdateRole = ComponentFactory.createSecondaryButton("Update Role");
-        btnUpdateRole.setPreferredSize(new Dimension(130, 35));
+        JButton btnUpdateRole = ComponentFactory.createSecondaryButton("âœï¸ Update Role");
         btnUpdateRole.addActionListener(e -> updateMemberRole());
 
-        JButton btnRemove = ComponentFactory.createDangerButton("Remove Member");
-        btnRemove.setPreferredSize(new Dimension(130, 35));
+        JButton btnRemove = ComponentFactory.createDangerButton("ðŸ—‘ï¸ Remove Member");
         btnRemove.addActionListener(e -> removeMember());
 
         actionPanel.add(btnUpdateRole);
@@ -191,7 +183,6 @@ public class ManageMembersDialog extends JDialog {
 
         return panel;
     }
-
 
     private JPanel createAddMemberSection() {
         JPanel panel = new JPanel();
@@ -203,20 +194,21 @@ public class ManageMembersDialog extends JDialog {
         ));
 
         // Title
-        JLabel titleLabel = ComponentFactory.createHeadingLabel("Add New Member");
+        JLabel titleLabel = ComponentFactory.createHeadingLabel("âž• Add New Member");
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createVerticalStrut(15));
 
-        // User selection row
-        JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        userPanel.setBackground(StyleUtil.BACKGROUND);
-        userPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Form panel
+        JPanel formPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        formPanel.setBackground(StyleUtil.BACKGROUND);
+        formPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        // User selection
         JLabel lblUser = ComponentFactory.createBodyLabel("Select User:");
         cmbUsers = new JComboBox<>();
         cmbUsers.setFont(StyleUtil.FONT_BODY);
-        cmbUsers.setPreferredSize(new Dimension(300, 35));
+        cmbUsers.setPreferredSize(new Dimension(250, 35));
         cmbUsers.setBackground(Color.WHITE);
         cmbUsers.setForeground(StyleUtil.TEXT_PRIMARY);
 
@@ -233,20 +225,11 @@ public class ManageMembersDialog extends JDialog {
             }
         });
 
-        userPanel.add(lblUser);
-        userPanel.add(cmbUsers);
-        panel.add(userPanel);
-        panel.add(Box.createVerticalStrut(10));
-
-        // Role input row
-        JPanel rolePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        rolePanel.setBackground(StyleUtil.BACKGROUND);
-        rolePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
+        // Role input
         JLabel lblRole = ComponentFactory.createBodyLabel("Role:");
         txtRole = new JTextField(15);
         txtRole.setFont(StyleUtil.FONT_BODY);
-        txtRole.setPreferredSize(new Dimension(300, 35));
+        txtRole.setPreferredSize(new Dimension(200, 35));
         txtRole.setBackground(Color.WHITE);
         txtRole.setForeground(StyleUtil.TEXT_PRIMARY);
         txtRole.setBorder(BorderFactory.createCompoundBorder(
@@ -254,32 +237,29 @@ public class ManageMembersDialog extends JDialog {
                 BorderFactory.createEmptyBorder(5, 8, 5, 8)
         ));
 
-        rolePanel.add(lblRole);
-        rolePanel.add(txtRole);
-        panel.add(rolePanel);
-        panel.add(Box.createVerticalStrut(10));
-
-        // Add button row
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        buttonPanel.setBackground(StyleUtil.BACKGROUND);
-        buttonPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JButton btnAdd = ComponentFactory.createPrimaryButton("Add Member");
-        btnAdd.setPreferredSize(new Dimension(150, 35));
+        // Add button
+        JButton btnAdd = ComponentFactory.createPrimaryButton("âž• Add Member");
         btnAdd.addActionListener(e -> addMember());
 
-        buttonPanel.add(btnAdd);
-        panel.add(buttonPanel);
+        formPanel.add(lblUser);
+        formPanel.add(cmbUsers);
+        formPanel.add(Box.createHorizontalStrut(10));
+        formPanel.add(lblRole);
+        formPanel.add(txtRole);
+        formPanel.add(Box.createHorizontalStrut(10));
+        formPanel.add(btnAdd);
+
+        panel.add(formPanel);
 
         return panel;
     }
 
     private JPanel createButtonPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 15));
         panel.setBackground(StyleUtil.SURFACE);
-        panel.setBorder(StyleUtil.createPaddingBorder(10));
+        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, StyleUtil.BORDER));
 
-        JButton btnClose = ComponentFactory.createSecondaryButton("Done");
+        JButton btnClose = ComponentFactory.createSecondaryButton("âœ“ Done");
         btnClose.addActionListener(e -> {
             try {
                 parentModule.onProjectUpdated();
@@ -294,19 +274,10 @@ public class ManageMembersDialog extends JDialog {
         return panel;
     }
 
-    // loadMembers() - replace your current method with this (adds "no members" fallback)
     private void loadMembers() {
         tableModel.setRowCount(0);
 
         List<ProjectMember> members = projectMemberDao.findByProject(projectId);
-
-        if (members == null || members.isEmpty()) {
-            // show a single-row message so user sees that list is intentionally empty
-            Object[] row = {"-", "No members found", "-", "-"};
-            tableModel.addRow(row);
-            lblMemberCount.setText("Total Members: 0");
-            return;
-        }
 
         for (ProjectMember member : members) {
             try {
@@ -325,9 +296,9 @@ public class ManageMembersDialog extends JDialog {
             }
         }
 
+        // Update count
         lblMemberCount.setText("Total Members: " + members.size());
     }
-
 
     private void loadAvailableUsers() {
         cmbUsers.removeAllItems();
@@ -379,6 +350,15 @@ public class ManageMembersDialog extends JDialog {
         try {
             ProjectMember newMember = new ProjectMember(projectId, selectedUser.getUserId(), role);
             projectMemberDao.insert(newMember);
+
+            // ============ BİLDİRİM GÖNDER - BAŞLANGIÇ ============
+            notificationService.notifyProjectMemberAdded(
+                    projectId,
+                    selectedUser.getUserId(),
+                    project.getProjectName(),
+                    mainFrame.getCurrentUsername()
+            );
+            // ============ BİLDİRİM GÖNDER - BİTİŞ ============
 
             JOptionPane.showMessageDialog(this,
                     "Member added successfully!",
@@ -479,6 +459,15 @@ public class ManageMembersDialog extends JDialog {
             try {
                 int userId = getUserIdFromMemberId(projectMemberId);
                 projectMemberDao.delete(projectId, userId);
+
+                // ============ BİLDİRİM GÖNDER - BAŞLANGIÇ ============
+                notificationService.notifyProjectMemberRemoved(
+                        projectId,
+                        userId,
+                        project.getProjectName(),
+                        mainFrame.getCurrentUsername()
+                );
+                // ============ BİLDİRİM GÖNDER - BİTİŞ ============
 
                 JOptionPane.showMessageDialog(this,
                         "Member removed successfully!",

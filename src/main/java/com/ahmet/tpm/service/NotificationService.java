@@ -248,4 +248,18 @@ public class NotificationService {
     public boolean deleteNotification(int notificationId) {
         return notificationDao.delete(notificationId);
     }
+
+    /**
+     * Get user notifications with pagination
+     */
+    public List<Notification> getUserNotifications(int userId, int offset, int limit) {
+        return notificationDao.getUserNotifications(userId, offset, limit);
+    }
+
+    /**
+     * Delete all notifications for user
+     */
+    public int deleteAllNotifications(int userId) {
+        return notificationDao.deleteAllNotifications(userId);
+    }
 }

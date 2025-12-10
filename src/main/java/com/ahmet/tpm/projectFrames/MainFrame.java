@@ -1,5 +1,6 @@
 package com.ahmet.tpm.projectFrames;
 
+import com.ahmet.tpm.components.NotificationBellPanel;
 import com.ahmet.tpm.projectFrames.projects.ProjectsModulePanel;
 import com.ahmet.tpm.projectFrames.profile.ProfilePanel;
 import com.ahmet.tpm.projectFrames.dashboard.DashboardPanel;
@@ -82,10 +83,15 @@ public class MainFrame extends JFrame {
 
         JLabel userLabel = ComponentFactory.createBodyLabel(currentUsername);
         userLabel.setForeground(StyleUtil.TEXT_PRIMARY);
+
+        NotificationBellPanel notificationBell =
+                new NotificationBellPanel(this,currentUserId);   // 🔔 BURADA
+
         JButton btnLogout = ComponentFactory.createDangerButton("Logout");
         btnLogout.addActionListener(e -> logout());
 
         rightPanel.add(userLabel);
+        rightPanel.add(notificationBell);          // 🔔 EKLENDİ
         rightPanel.add(btnLogout);
 
         // Assemble

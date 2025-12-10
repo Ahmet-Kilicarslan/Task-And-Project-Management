@@ -251,6 +251,40 @@ public class NotificationDao {
         return notifications;
     }
 
+    // Get unread notifications for a user
+    public List<Notification> getUnreadNotifications(int userId) {
+        return findUnreadByUserId(userId);
+    }
+
+    // Get user notifications with pagination
+    public List<Notification> getUserNotifications(int userId, int offset, int limit) {
+        List<Notification> notifications = new ArrayList<>();
+        String sql = "SELECT * FROM Notifications WHERE user_id = ? " +
+                "ORDER BY created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, userId);
+            pstmt.setInt(2, offset);
+            pstmt.setInt(3, limit);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                notifications.add(mapResultSetToNotification(rs));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return notifications;
+    }
+
+    // Delete all notifications for a user
+    public int deleteAllNotifications(int userId) {
+        return deleteByUserId(userId);
+    }
+
     // Helper method to map ResultSet to Notification
     private Notification mapResultSetToNotification(ResultSet rs) throws SQLException {
         Notification notification = new Notification();
@@ -280,5 +314,19 @@ public class NotificationDao {
         notification.setPriority(rs.getString("priority"));
 
         return notification;
+    }
+
+    public void createTaskAssignmentNotification(int userId, int taskId) {
+        Notification notification = new Notification();
+
+        notification.setUserId(userId);
+        notification.setNotificationType("TASK_ASSIGNED");
+        notification.setTitle("New Task Assigned");
+        notification.setMessage("You have been assigned to a new task.");
+        notification.setTaskId(taskId);
+        notification.setActionUrl("/tasks/" + taskId);
+        notification.setPriority("NORMAL");
+
+        insert(notification);
     }
 }

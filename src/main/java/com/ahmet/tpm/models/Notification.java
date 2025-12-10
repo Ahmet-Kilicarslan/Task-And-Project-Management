@@ -2,23 +2,26 @@ package com.ahmet.tpm.models;
 
 import java.time.LocalDateTime;
 
+/**
+ * Notification model class
+ * Represents a notification in the system
+ */
 public class Notification {
 
     private int notificationId;
     private int userId;
-    private String notificationType;
+    private String notificationType;  // notification_type in DB
     private String title;
     private String message;
-    private boolean isRead;
-    private LocalDateTime createdAt;
-    private Integer taskId;
-    private Integer projectId;
+    private Integer taskId;  // task_id in DB
+    private Integer projectId;  // project_id in DB
     private String actionUrl;
     private String priority;
+    private boolean isRead;
+    private LocalDateTime createdAt;
 
     // Constructors
-    public Notification() {
-    }
+    public Notification() {}
 
     public Notification(int userId, String notificationType, String title, String message) {
         this.userId = userId;
@@ -29,11 +32,21 @@ public class Notification {
         this.priority = "NORMAL";
     }
 
-    public Notification(int userId, String notificationType, String title, String message,
-                        Integer taskId, Integer projectId) {
-        this(userId, notificationType, title, message);
+    // Full constructor (for database retrieval)
+    public Notification(int notificationId, int userId, String notificationType,
+                        String title, String message, Integer taskId, Integer projectId,
+                        String actionUrl, String priority, boolean isRead, LocalDateTime createdAt) {
+        this.notificationId = notificationId;
+        this.userId = userId;
+        this.notificationType = notificationType;
+        this.title = title;
+        this.message = message;
         this.taskId = taskId;
         this.projectId = projectId;
+        this.actionUrl = actionUrl;
+        this.priority = priority;
+        this.isRead = isRead;
+        this.createdAt = createdAt;
     }
 
     // Getters and Setters
@@ -77,22 +90,6 @@ public class Notification {
         this.message = message;
     }
 
-    public boolean isRead() {
-        return isRead;
-    }
-
-    public void setRead(boolean read) {
-        isRead = read;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public Integer getTaskId() {
         return taskId;
     }
@@ -125,12 +122,82 @@ public class Notification {
         this.priority = priority;
     }
 
+    public boolean isRead() {
+        return isRead;
+    }
+
+    public void setRead(boolean read) {
+        isRead = read;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    // Backward compatibility methods (deprecated - use new names)
+    @Deprecated
+    public Integer getRelatedTaskId() {
+        return taskId;
+    }
+
+    @Deprecated
+    public void setRelatedTaskId(Integer taskId) {
+        this.taskId = taskId;
+    }
+
+    @Deprecated
+    public Integer getRelatedProjectId() {
+        return projectId;
+    }
+
+    @Deprecated
+    public void setRelatedProjectId(Integer projectId) {
+        this.projectId = projectId;
+    }
+
+    // Utility methods
+    public String getTimeAgo() {
+        if (createdAt == null) return "";
+
+        LocalDateTime now = LocalDateTime.now();
+        long minutes = java.time.Duration.between(createdAt, now).toMinutes();
+
+        if (minutes < 1) return "Just now";
+        if (minutes < 60) return minutes + "m ago";
+
+        long hours = minutes / 60;
+        if (hours < 24) return hours + "h ago";
+
+        long days = hours / 24;
+        if (days < 7) return days + "d ago";
+
+        return createdAt.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    // Helper method to get icon color based on notification type
+    public String getIconColor() {
+        return switch (notificationType) {
+            case "TASK_ASSIGNED" -> "#2196F3";
+            case "TASK_COMPLETED" -> "#4CAF50";
+            case "TASK_OVERDUE" -> "#F44336";
+            case "TASK_STATUS_CHANGED" -> "#FF9800";
+            case "TASK_COMMENT" -> "#9C27B0";
+            case "PROJECT_MEMBER_ADDED" -> "#00BCD4";
+            case "PROJECT_STATUS_CHANGED" -> "#FFC107";
+            default -> "#607D8B";
+        };
+    }
+
     @Override
     public String toString() {
         return "Notification{" +
                 "notificationId=" + notificationId +
                 ", userId=" + userId +
-                ", notificationType='" + notificationType + '\'' +
+                ", type='" + notificationType + '\'' +
                 ", title='" + title + '\'' +
                 ", isRead=" + isRead +
                 ", createdAt=" + createdAt +

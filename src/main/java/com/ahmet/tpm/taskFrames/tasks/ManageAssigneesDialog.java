@@ -1,4 +1,5 @@
 package com.ahmet.tpm.taskFrames.tasks;
+import com.ahmet.tpm.service.NotificationService;
 
 import com.ahmet.tpm.dao.*;
 import com.ahmet.tpm.taskFrames.TaskMainFrame;
@@ -13,6 +14,10 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class ManageAssigneesDialog extends JDialog {
+
+
+    private NotificationService notificationService = new NotificationService();
+
 
     private TasksModulePanel parentModule;
     private TaskMainFrame mainFrame;
@@ -33,6 +38,8 @@ public class ManageAssigneesDialog extends JDialog {
     private JComboBox<User> cmbUsers;
     private JLabel lblTaskName;
     private JLabel lblAssigneeCount;
+
+
 
     public ManageAssigneesDialog(TaskMainFrame mainFrame, TasksModulePanel parentModule, int taskId) {
         super(mainFrame, "Manage Task Assignees", true);
@@ -340,6 +347,15 @@ public class ManageAssigneesDialog extends JDialog {
             TaskMember newAssignee = new TaskMember(taskId, selectedUser.getUserId());
             taskMemberDao.insert(newAssignee);
 
+            // ============ BİLDİRİM GÖNDER - BAŞLANGIÇ ============
+            notificationService.notifyTaskAssignment(
+                    taskId,
+                    selectedUser.getUserId(),
+                    task.getTaskName(),
+                    mainFrame.getCurrentUsername()
+            );
+            // ============ BİLDİRİM GÖNDER - BİTİŞ ============
+
             JOptionPane.showMessageDialog(this,
                     "Assignee added successfully!",
                     "Success",
@@ -416,4 +432,6 @@ public class ManageAssigneesDialog extends JDialog {
         }
         return -1;
     }
+
+
 }

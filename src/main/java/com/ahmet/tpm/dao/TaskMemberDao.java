@@ -2,12 +2,15 @@ package com.ahmet.tpm.dao;
 
 import com.ahmet.tpm.config.DatabaseConfig;
 import com.ahmet.tpm.models.TaskMember;
+import com.ahmet.tpm.dao.NotificationDao;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TaskMemberDao{
+
+    NotificationDao notificationDao = new NotificationDao();
 
     // ==================== HELPER METHOD ====================
     private TaskMember extractTaskMemberFromResultSet(ResultSet rs) throws SQLException {
@@ -35,7 +38,17 @@ public class TaskMemberDao{
             stmt.setInt(1, member.getTaskId());
             stmt.setInt(2, member.getUserId());
             stmt.executeUpdate();
+
+            notificationDao.createTaskAssignmentNotification(
+                    member.getUserId(),
+                    member.getTaskId()
+            );
+
+
             System.out.println("✓ User assigned to task successfully!");
+
+
+
 
         } catch (SQLException e) {
             System.err.println("✗ Error assigning user to task: " + e.getMessage());

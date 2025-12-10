@@ -1,8 +1,10 @@
 package com.ahmet.tpm.taskFrames.tasks;
 
 import com.ahmet.tpm.dao.*;
-import com.ahmet.tpm.taskFrames.TaskMainFrame;
+import com.ahmet.tpm.projectFrames.MainFrame;
+import com.ahmet.tpm.taskFrames.TaskMainFrame; // ============ TASKMAINFRAME İMPORT ============
 import com.ahmet.tpm.models.*;
+import com.ahmet.tpm.service.NotificationService; // ============ BİLDİRİM İMPORT ============
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
 import com.ahmet.tpm.utils.UIHelper;
@@ -15,7 +17,7 @@ import java.util.List;
 public class EditTaskDialog extends JDialog {
 
     private TasksModulePanel parentModule;
-    private TaskMainFrame mainFrame;
+    private Frame parentFrame; // ============ Frame (generic) KULLANIYORUZ ============
 
     // DAOs
     private TaskDao taskDao;
@@ -23,8 +25,12 @@ public class EditTaskDialog extends JDialog {
     private TaskStatusDao taskStatusDao;
     private TaskPriorityDao taskPriorityDao;
 
+    // ============ BİLDİRİM SERVİSİ ============
+    private NotificationService notificationService;
+
     // Current task being edited
     private Task task;
+    private int oldStatusId; // ============ ESKİ STATUS'U SAKLAMAK İÇİN ============
 
     // Form fields
     private JComboBox<Project> cmbProject;
@@ -35,20 +41,40 @@ public class EditTaskDialog extends JDialog {
     private JTextField txtEstimatedHours;
     private JTextField txtDueDate;
 
+    // ============ CONSTRUCTOR - MainFrame İLE ============
+    public EditTaskDialog(MainFrame mainFrame, TasksModulePanel parentModule, int taskId) {
+        super(mainFrame, "Edit Task", true);
+        this.parentFrame = mainFrame;
+        this.parentModule = parentModule;
+        initializeCommon(taskId);
+    }
+
+    // ============ CONSTRUCTOR - TaskMainFrame İLE ============
     public EditTaskDialog(TaskMainFrame mainFrame, TasksModulePanel parentModule, int taskId) {
         super(mainFrame, "Edit Task", true);
-        this.mainFrame = mainFrame;
+        this.parentFrame = mainFrame;
         this.parentModule = parentModule;
+        initializeCommon(taskId);
+    }
+
+    // ============ ORTAK INITIALIZATION ============
+    private void initializeCommon(int taskId) {
         this.taskDao = new TaskDao();
         this.projectDao = new ProjectDao();
         this.taskStatusDao = new TaskStatusDao();
         this.taskPriorityDao = new TaskPriorityDao();
 
+        // ============ BİLDİRİM SERVİSİNİ BAŞLAT ============
+        this.notificationService = new NotificationService();
+
         // Load task
         this.task = taskDao.findById(taskId);
 
+        // ============ ESKİ STATUS'U SAKLA ============
+        this.oldStatusId = (this.task != null) ? this.task.getStatusId() : -1;
+
         if (this.task == null) {
-            UIHelper.showError(mainFrame, "Task not found!");
+            UIHelper.showError((JFrame) parentFrame, "Task not found!");
             dispose();
             return;
         }
@@ -60,7 +86,7 @@ public class EditTaskDialog extends JDialog {
 
     private void initializeDialog() {
         setSize(600, 750);
-        setLocationRelativeTo(mainFrame);
+        setLocationRelativeTo(parentFrame);
         setLayout(new BorderLayout());
         setResizable(false);
 
@@ -307,7 +333,8 @@ public class EditTaskDialog extends JDialog {
 
             // Status
             TaskStatus selectedStatus = (TaskStatus) cmbStatus.getSelectedItem();
-            task.setStatusId(selectedStatus.getStatusId());
+            int newStatusId = selectedStatus.getStatusId();
+            task.setStatusId(newStatusId);
 
             // Priority
             TaskPriority selectedPriority = (TaskPriority) cmbPriority.getSelectedItem();
@@ -333,7 +360,30 @@ public class EditTaskDialog extends JDialog {
             // Update in database
             taskDao.update(task);
 
-            UIHelper.showSuccess(mainFrame, "Task updated successfully!");
+            // ============ BİLDİRİM GÖNDER - BAŞLANGIÇ ============
+
+            // STATUS DEĞİŞTİYSE BİLDİRİM GÖNDER
+            if (oldStatusId != newStatusId) {
+                notificationService.notifyTaskStatusChange(
+                        task.getTaskId(),
+                        task.getTaskName(),
+                        selectedStatus.getStatusName(),
+                        getCurrentUsername()
+                );
+            }
+
+            // DONE'A GEÇTİYSE COMPLETION BİLDİRİMİ
+            if (newStatusId == 4 && oldStatusId != 4) {  // 4 = DONE status
+                notificationService.notifyTaskCompletion(
+                        task.getTaskId(),
+                        task.getTaskName(),
+                        getCurrentUsername()
+                );
+            }
+
+            // ============ BİLDİRİM GÖNDER - BİTİŞ ============
+
+            UIHelper.showSuccess((JFrame) parentFrame, "Task updated successfully!");
 
             // Notify parent and close
             try {
@@ -433,5 +483,15 @@ public class EditTaskDialog extends JDialog {
         }
 
         return true;
+    }
+
+    // ============ HELPER METHOD - getCurrentUsername() ============
+    private String getCurrentUsername() {
+        if (parentFrame instanceof MainFrame) {
+            return ((MainFrame) parentFrame).getCurrentUsername();
+        } else if (parentFrame instanceof TaskMainFrame) {
+            return ((TaskMainFrame) parentFrame).getCurrentUsername();
+        }
+        return "Unknown User";
     }
 }
