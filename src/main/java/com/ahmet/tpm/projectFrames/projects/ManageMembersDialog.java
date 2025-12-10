@@ -10,6 +10,7 @@ import com.ahmet.tpm.models.Project;
 import com.ahmet.tpm.service.NotificationService; // ============ BİLDİRİM İMPORT ============
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
+import com.ahmet.tpm.service.NotificationService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -21,6 +22,7 @@ public class ManageMembersDialog extends JDialog {
 
     private ProjectsModulePanel parentModule;
     private MainFrame mainFrame;
+
 
     // DAOs
     private ProjectMemberDao projectMemberDao;
@@ -110,7 +112,7 @@ public class ManageMembersDialog extends JDialog {
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setBackground(StyleUtil.PRIMARY_LIGHT);
 
-        lblProjectName = ComponentFactory.createHeadingLabel("ðŸ‘¥ " + project.getProjectName());
+        lblProjectName = ComponentFactory.createHeadingLabel( project.getProjectName());
         lblProjectName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         lblMemberCount = ComponentFactory.createBodyLabel("Total Members: 0");
@@ -170,10 +172,10 @@ public class ManageMembersDialog extends JDialog {
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         actionPanel.setBackground(StyleUtil.SURFACE);
 
-        JButton btnUpdateRole = ComponentFactory.createSecondaryButton("âœï¸ Update Role");
+        JButton btnUpdateRole = ComponentFactory.createSecondaryButton(" Update Role");
         btnUpdateRole.addActionListener(e -> updateMemberRole());
 
-        JButton btnRemove = ComponentFactory.createDangerButton("ðŸ—‘ï¸ Remove Member");
+        JButton btnRemove = ComponentFactory.createDangerButton(" Remove Member");
         btnRemove.addActionListener(e -> removeMember());
 
         actionPanel.add(btnUpdateRole);
@@ -194,7 +196,7 @@ public class ManageMembersDialog extends JDialog {
         ));
 
         // Title
-        JLabel titleLabel = ComponentFactory.createHeadingLabel("âž• Add New Member");
+        JLabel titleLabel = ComponentFactory.createHeadingLabel(" Add New Member");
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createVerticalStrut(15));
@@ -238,7 +240,7 @@ public class ManageMembersDialog extends JDialog {
         ));
 
         // Add button
-        JButton btnAdd = ComponentFactory.createPrimaryButton("âž• Add Member");
+        JButton btnAdd = ComponentFactory.createPrimaryButton(" Add Member");
         btnAdd.addActionListener(e -> addMember());
 
         formPanel.add(lblUser);
@@ -259,7 +261,7 @@ public class ManageMembersDialog extends JDialog {
         panel.setBackground(StyleUtil.SURFACE);
         panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, StyleUtil.BORDER));
 
-        JButton btnClose = ComponentFactory.createSecondaryButton("âœ“ Done");
+        JButton btnClose = ComponentFactory.createSecondaryButton(" Done");
         btnClose.addActionListener(e -> {
             try {
                 parentModule.onProjectUpdated();
@@ -358,7 +360,14 @@ public class ManageMembersDialog extends JDialog {
                     project.getProjectName(),
                     mainFrame.getCurrentUsername()
             );
+
+            // ========== ADD THIS LINE ==========
+            if (mainFrame.getNotificationBell() != null) {
+                mainFrame.getNotificationBell().refreshUnreadCount();
+            }
+            // ===================================
             // ============ BİLDİRİM GÖNDER - BİTİŞ ============
+
 
             JOptionPane.showMessageDialog(this,
                     "Member added successfully!",

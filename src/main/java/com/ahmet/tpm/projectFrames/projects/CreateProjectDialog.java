@@ -10,6 +10,8 @@ import com.ahmet.tpm.models.ProjectStatus;
 import com.ahmet.tpm.utils.ComponentFactory;
 import com.ahmet.tpm.utils.StyleUtil;
 import com.ahmet.tpm.utils.UIHelper;
+import com.ahmet.tpm.service.NotificationService;
+
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,6 +22,8 @@ public class CreateProjectDialog extends JDialog {
 
     private ProjectsModulePanel parentModule;
     private MainFrame mainFrame;
+    private NotificationService notificationService;
+
 
     // DAOs
     private ProjectDao projectDao;
@@ -41,6 +45,7 @@ public class CreateProjectDialog extends JDialog {
         this.projectDao = new ProjectDao();
         this.statusDao = new ProjectStatusDao();
         this.departmentDao = new DepartmentDao();
+        this.notificationService = new NotificationService();
 
         initializeDialog();
         loadDropdownData();

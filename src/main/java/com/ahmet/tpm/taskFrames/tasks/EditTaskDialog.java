@@ -17,20 +17,23 @@ import java.util.List;
 public class EditTaskDialog extends JDialog {
 
     private TasksModulePanel parentModule;
-    private Frame parentFrame; // ============ Frame (generic) KULLANIYORUZ ============
+    private Frame parentFrame;
 
     // DAOs
     private TaskDao taskDao;
     private ProjectDao projectDao;
     private TaskStatusDao taskStatusDao;
     private TaskPriorityDao taskPriorityDao;
+    private UserDao userDao;
 
-    // ============ BİLDİRİM SERVİSİ ============
     private NotificationService notificationService;
 
     // Current task being edited
     private Task task;
-    private int oldStatusId; // ============ ESKİ STATUS'U SAKLAMAK İÇİN ============
+    private int oldStatusId;
+    private int oldPriorityId;
+    private String oldTaskName;
+    private LocalDate oldDueDate;;
 
     // Form fields
     private JComboBox<Project> cmbProject;
@@ -57,21 +60,24 @@ public class EditTaskDialog extends JDialog {
         initializeCommon(taskId);
     }
 
-    // ============ ORTAK INITIALIZATION ============
+
     private void initializeCommon(int taskId) {
         this.taskDao = new TaskDao();
         this.projectDao = new ProjectDao();
         this.taskStatusDao = new TaskStatusDao();
         this.taskPriorityDao = new TaskPriorityDao();
+        this.userDao = new UserDao();
 
-        // ============ BİLDİRİM SERVİSİNİ BAŞLAT ============
+
         this.notificationService = new NotificationService();
 
         // Load task
         this.task = taskDao.findById(taskId);
 
-        // ============ ESKİ STATUS'U SAKLA ============
-        this.oldStatusId = (this.task != null) ? this.task.getStatusId() : -1;
+        this.oldStatusId = this.task.getStatusId();
+        this.oldPriorityId = this.task.getPriorityId();
+        this.oldTaskName = this.task.getTaskName();
+        this.oldDueDate = this.task.getDueDate();
 
         if (this.task == null) {
             UIHelper.showError((JFrame) parentFrame, "Task not found!");
@@ -318,14 +324,15 @@ public class EditTaskDialog extends JDialog {
         }
 
         try {
-            // Update task object
+            // ============ STEP 1: UPDATE TASK OBJECT ============
 
             // Project
             Project selectedProject = (Project) cmbProject.getSelectedItem();
             task.setProjectId(selectedProject.getProjectId());
 
             // Task name
-            task.setTaskName(txtTaskName.getText().trim());
+            String newTaskName = txtTaskName.getText().trim();
+            task.setTaskName(newTaskName);
 
             // Description
             String description = txtDescription.getText().trim();
@@ -338,7 +345,8 @@ public class EditTaskDialog extends JDialog {
 
             // Priority
             TaskPriority selectedPriority = (TaskPriority) cmbPriority.getSelectedItem();
-            task.setPriorityId(selectedPriority.getPriorityId());
+            int newPriorityId = selectedPriority.getPriorityId();
+            task.setPriorityId(newPriorityId);
 
             // Estimated hours
             String hoursStr = txtEstimatedHours.getText().trim();
@@ -349,40 +357,75 @@ public class EditTaskDialog extends JDialog {
             }
 
             // Due date
+            LocalDate newDueDate = null;
             String dueDateStr = txtDueDate.getText().trim();
             if (!dueDateStr.isEmpty()) {
-                LocalDate date = LocalDate.parse(dueDateStr);
-                task.setDueDate(date);
+                newDueDate = LocalDate.parse(dueDateStr);
+                task.setDueDate(newDueDate);
             } else {
                 task.setDueDate(null);
             }
 
-            // Update in database
+            // ============ STEP 2: UPDATE IN DATABASE ============
             taskDao.update(task);
 
-            // ============ BİLDİRİM GÖNDER - BAŞLANGIÇ ============
+            // ============ STEP 3: SEND NOTIFICATIONS ============
+            // Get current user's name for notifications
+            String updaterName = getCurrentUsername();
 
-            // STATUS DEĞİŞTİYSE BİLDİRİM GÖNDER
-            if (oldStatusId != newStatusId) {
+            // Check if status changed (most important notification)
+            if (newStatusId != oldStatusId) {
+                String newStatusName = selectedStatus.getStatusName();
                 notificationService.notifyTaskStatusChange(
                         task.getTaskId(),
-                        task.getTaskName(),
-                        selectedStatus.getStatusName(),
-                        getCurrentUsername()
+                        newTaskName,
+                        newStatusName,
+                        updaterName
                 );
+                System.out.println("✓ Status change notification sent");
             }
 
-            // DONE'A GEÇTİYSE COMPLETION BİLDİRİMİ
-            if (newStatusId == 4 && oldStatusId != 4) {  // 4 = DONE status
-                notificationService.notifyTaskCompletion(
+            // Check if priority changed
+            if (newPriorityId != oldPriorityId) {
+                notificationService.notifyTaskUpdate(
                         task.getTaskId(),
-                        task.getTaskName(),
-                        getCurrentUsername()
+                        newTaskName,
+                        updaterName,
+                        "priority"
                 );
+                System.out.println("✓ Priority change notification sent");
             }
 
-            // ============ BİLDİRİM GÖNDER - BİTİŞ ============
+            // Check if task name changed
+            if (!newTaskName.equals(oldTaskName)) {
+                notificationService.notifyTaskUpdate(
+                        task.getTaskId(),
+                        newTaskName,
+                        updaterName,
+                        "task name"
+                );
+                System.out.println("✓ Task name change notification sent");
+            }
 
+            // Check if due date changed
+            boolean dueDateChanged = false;
+            if (oldDueDate == null && newDueDate != null) {
+                dueDateChanged = true;
+            } else if (oldDueDate != null && !oldDueDate.equals(newDueDate)) {
+                dueDateChanged = true;
+            }
+
+            if (dueDateChanged) {
+                notificationService.notifyTaskUpdate(
+                        task.getTaskId(),
+                        newTaskName,
+                        updaterName,
+                        "due date"
+                );
+                System.out.println("✓ Due date change notification sent");
+            }
+
+            // ============ STEP 4: SHOW SUCCESS & REFRESH UI ============
             UIHelper.showSuccess((JFrame) parentFrame, "Task updated successfully!");
 
             // Notify parent and close
@@ -485,7 +528,6 @@ public class EditTaskDialog extends JDialog {
         return true;
     }
 
-    // ============ HELPER METHOD - getCurrentUsername() ============
     private String getCurrentUsername() {
         if (parentFrame instanceof MainFrame) {
             return ((MainFrame) parentFrame).getCurrentUsername();

@@ -17,6 +17,8 @@ public class MainFrame extends JFrame {
     private CardLayout cardLayout;
     private JPanel contentPanel;
     private JButton btnDashboard, btnProjects, btnProfile;
+    private NotificationBellPanel notificationBell;
+
 
     // User info
     private String currentUsername;
@@ -84,14 +86,14 @@ public class MainFrame extends JFrame {
         JLabel userLabel = ComponentFactory.createBodyLabel(currentUsername);
         userLabel.setForeground(StyleUtil.TEXT_PRIMARY);
 
-        NotificationBellPanel notificationBell =
-                new NotificationBellPanel(this,currentUserId);   // 🔔 BURADA
+         notificationBell =
+                new NotificationBellPanel(this,currentUserId);
 
         JButton btnLogout = ComponentFactory.createDangerButton("Logout");
         btnLogout.addActionListener(e -> logout());
 
         rightPanel.add(userLabel);
-        rightPanel.add(notificationBell);          // 🔔 EKLENDİ
+        rightPanel.add(notificationBell);
         rightPanel.add(btnLogout);
 
         // Assemble
@@ -170,6 +172,10 @@ public class MainFrame extends JFrame {
     public String getCurrentUsername() { return currentUsername; }
     public int getCurrentUserId() { return currentUserId; }
 
+
+    public NotificationBellPanel getNotificationBell() {
+        return notificationBell;
+    }
     // Replace panels later
     public void setDashboardPanel(JPanel panel) {
         contentPanel.remove(0);

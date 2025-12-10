@@ -1,5 +1,6 @@
 package com.ahmet.tpm.taskFrames;
 
+import com.ahmet.tpm.components.NotificationBellPanel;
 import com.ahmet.tpm.taskFrames.tasks.TasksModulePanel;
 import com.ahmet.tpm.taskFrames.dashboard.TaskDashboard;
 import com.ahmet.tpm.taskFrames.profile.TaskProfilePanel;
@@ -20,6 +21,7 @@ public class TaskMainFrame extends JFrame {
     private CardLayout cardLayout;
     private JPanel contentPanel;
     private JButton btnDashboard, btnTasks, btnProfile;
+    private NotificationBellPanel notificationBell;
 
     // User info
     private String currentUsername;
@@ -93,11 +95,14 @@ public class TaskMainFrame extends JFrame {
 
         JLabel userLabel = ComponentFactory.createBodyLabel(currentUsername);
         userLabel.setForeground(StyleUtil.TEXT_PRIMARY);
+        notificationBell =
+                new NotificationBellPanel(this,currentUserId);
 
         JButton btnLogout = ComponentFactory.createDangerButton("Logout");
         btnLogout.addActionListener(e -> logout());
 
         rightPanel.add(userLabel);
+        rightPanel.add(notificationBell);
         rightPanel.add(btnLogout);
 
         // Assemble
