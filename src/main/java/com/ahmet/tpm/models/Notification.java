@@ -164,9 +164,15 @@ public class Notification {
         if (createdAt == null) return "";
 
         LocalDateTime now = LocalDateTime.now();
-        long minutes = java.time.Duration.between(createdAt, now).toMinutes();
+        long seconds = java.time.Duration.between(createdAt, now).getSeconds();
 
-        if (minutes < 1) return "Just now";
+        // Debug logging (remove after testing)
+        // System.out.println("DEBUG Time - Created: " + createdAt + " | Now: " + now + " | Seconds: " + seconds);
+
+        if (seconds < 10) return "Just now";
+        if (seconds < 60) return seconds + "s ago";
+
+        long minutes = seconds / 60;
         if (minutes < 60) return minutes + "m ago";
 
         long hours = minutes / 60;

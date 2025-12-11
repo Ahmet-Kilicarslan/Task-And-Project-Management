@@ -1,0 +1,97 @@
+.
+├── fileStructure.txt
+├── pom.xml
+└── src
+    ├── main
+    │   ├── java
+    │   │   └── com
+    │   │       └── ahmet
+    │   │           └── tpm
+    │   │               ├── components
+    │   │               │   ├── NotificationBellPanel.java
+    │   │               │   ├── NotificationButton.java
+    │   │               │   ├── NotificationPanel.java
+    │   │               │   └── NotificationsDialog.java
+    │   │               ├── config
+    │   │               │   └── DatabaseConfig.java
+    │   │               ├── dao
+    │   │               │   ├── DepartmentDao.java
+    │   │               │   ├── NotificationDao.java
+    │   │               │   ├── ProjectDao.java
+    │   │               │   ├── ProjectMemberDao.java
+    │   │               │   ├── ProjectStatusDao.java
+    │   │               │   ├── RoleDao.java
+    │   │               │   ├── TaskCommentDao.java
+    │   │               │   ├── TaskDao.java
+    │   │               │   ├── TaskDependencyDao.java
+    │   │               │   ├── TaskMemberDao.java
+    │   │               │   ├── TaskPriorityDao.java
+    │   │               │   ├── TaskStatusDao.java
+    │   │               │   ├── TimeTrackingDao.java
+    │   │               │   ├── UserDao.java
+    │   │               │   └── UserRoleDao.java
+    │   │               ├── Main.java
+    │   │               ├── models
+    │   │               │   ├── Department.java
+    │   │               │   ├── Notification.java
+    │   │               │   ├── Project.java
+    │   │               │   ├── ProjectMember.java
+    │   │               │   ├── ProjectStatus.java
+    │   │               │   ├── ProjectWithDetails.java
+    │   │               │   ├── Role.java
+    │   │               │   ├── TaskComment.java
+    │   │               │   ├── TaskDependency.java
+    │   │               │   ├── Task.java
+    │   │               │   ├── TaskMember.java
+    │   │               │   ├── TaskPriority.java
+    │   │               │   ├── TaskStatus.java
+    │   │               │   ├── TimeTracking.java
+    │   │               │   ├── User.java
+    │   │               │   └── UserRole.java
+    │   │               ├── projectFrames
+    │   │               │   ├── auth
+    │   │               │   │   ├── LoginFrame.java
+    │   │               │   │   └── RegisterFrame.java
+    │   │               │   ├── dashboard
+    │   │               │   │   └── DashboardPanel.java
+    │   │               │   ├── MainFrame.java
+    │   │               │   ├── profile
+    │   │               │   │   └── ProfilePanel.java
+    │   │               │   └── projects
+    │   │               │       ├── CreateProjectDialog.java
+    │   │               │       ├── EditProjectDialog.java
+    │   │               │       ├── ManageMembersDialog.java
+    │   │               │       ├── ProjectDetailsPanel.java
+    │   │               │       ├── ProjectListPanel.java
+    │   │               │       └── ProjectsModulePanel.java
+    │   │               ├── service
+    │   │               │   └── NotificationService.java
+    │   │               ├── taskFrames
+    │   │               │   ├── auth
+    │   │               │   │   ├── TaskLoginFrame.java
+    │   │               │   │   └── TaskRegisterFrame.java
+    │   │               │   ├── dashboard
+    │   │               │   │   └── TaskDashboard.java
+    │   │               │   ├── profile
+    │   │               │   │   └── TaskProfilePanel.java
+    │   │               │   ├── TaskMainFrame.java
+    │   │               │   └── tasks
+    │   │               │       ├── CreateTaskDialog.java
+    │   │               │       ├── EditTaskDialog.java
+    │   │               │       ├── ManageAssigneesDialog.java
+    │   │               │       ├── TaskDetailsPanel.java
+    │   │               │       ├── TaskListPanel.java
+    │   │               │       └── TasksModulePanel.java
+    │   │               ├── test
+    │   │               │   └── NotificationDebugger.java
+    │   │               └── utils
+    │   │                   ├── ComponentFactory.java
+    │   │                   ├── StyleUtil.java
+    │   │                   └── UIHelper.java
+    │   └── resources
+    │       └── icons
+    │           └── bell.png
+    └── test
+        └── java
+
+28 directories, 67 files

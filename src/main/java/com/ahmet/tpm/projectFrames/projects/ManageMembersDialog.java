@@ -237,8 +237,9 @@ public class ManageMembersDialog extends JDialog {
                 BorderFactory.createEmptyBorder(5, 8, 5, 8)
         ));
 
-        // Add button
-        JButton btnAdd = ComponentFactory.createPrimaryButton("Add Member");
+        // Add button - shortened text and better size
+        JButton btnAdd = ComponentFactory.createPrimaryButton("Add");
+        btnAdd.setPreferredSize(new Dimension(80, 35));
         btnAdd.addActionListener(e -> addMember());
 
         formPanel.add(lblUser);
@@ -246,8 +247,7 @@ public class ManageMembersDialog extends JDialog {
         formPanel.add(Box.createHorizontalStrut(10));
         formPanel.add(lblRole);
         formPanel.add(txtRole);
-        formPanel.add(Box.createHorizontalStrut(10));
-        formPanel.add(btnAdd);
+        formPanel.add(btnAdd);  // Removed spacing - button directly next to role field
 
         panel.add(formPanel);
 
