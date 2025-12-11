@@ -13,6 +13,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.ArrayList;
 
 public class EditTaskDialog extends JDialog {
 
@@ -25,6 +26,7 @@ public class EditTaskDialog extends JDialog {
     private TaskStatusDao taskStatusDao;
     private TaskPriorityDao taskPriorityDao;
     private UserDao userDao;
+    private TaskDependencyDao taskDependencyDao;
 
     private NotificationService notificationService;
 
@@ -43,6 +45,11 @@ public class EditTaskDialog extends JDialog {
     private JComboBox<TaskPriority> cmbPriority;
     private JTextField txtEstimatedHours;
     private JTextField txtDueDate;
+
+    // Dependency selection
+    private JList<Task> dependencyList;
+    private DefaultListModel<Task> dependencyListModel;
+    private List<Integer> originalDependencyIds;
 
     // ============ CONSTRUCTOR - MainFrame İLE ============
     public EditTaskDialog(MainFrame mainFrame, TasksModulePanel parentModule, int taskId) {
@@ -67,6 +74,7 @@ public class EditTaskDialog extends JDialog {
         this.taskStatusDao = new TaskStatusDao();
         this.taskPriorityDao = new TaskPriorityDao();
         this.userDao = new UserDao();
+        this.taskDependencyDao = new TaskDependencyDao();
 
 
         this.notificationService = new NotificationService();
@@ -91,7 +99,7 @@ public class EditTaskDialog extends JDialog {
     }
 
     private void initializeDialog() {
-        setSize(600, 750);
+        setSize(600, 900);  // Increased height for dependency section
         setLocationRelativeTo(parentFrame);
         setLayout(new BorderLayout());
         setResizable(false);
@@ -193,6 +201,10 @@ public class EditTaskDialog extends JDialog {
         scrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
         scrollPane.setMaximumSize(new Dimension(550, 120));
         panel.add(scrollPane);
+        panel.add(Box.createVerticalStrut(10));
+
+        // Task Dependencies Section
+        panel.add(createDependencySection());
         panel.add(Box.createVerticalStrut(10));
 
         // Note
@@ -369,6 +381,9 @@ public class EditTaskDialog extends JDialog {
             // ============ STEP 2: UPDATE IN DATABASE ============
             taskDao.update(task);
 
+            // ============ STEP 2.5: UPDATE DEPENDENCIES ============
+            updateDependencies();
+
             // ============ STEP 3: SEND NOTIFICATIONS ============
             // Get current user's name for notifications
             String updaterName = getCurrentUsername();
@@ -535,5 +550,168 @@ public class EditTaskDialog extends JDialog {
             return ((TaskMainFrame) parentFrame).getCurrentUsername();
         }
         return "Unknown User";
+    }
+
+    // ==================== DEPENDENCY SECTION ====================
+
+    private JPanel createDependencySection() {
+        JPanel section = new JPanel();
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+        section.setBackground(StyleUtil.SURFACE);
+        section.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder(
+                        BorderFactory.createLineBorder(StyleUtil.BORDER, 2),
+                        "Task Dependencies (Optional)",
+                        javax.swing.border.TitledBorder.LEFT,
+                        javax.swing.border.TitledBorder.TOP,
+                        StyleUtil.FONT_SUBHEADING,
+                        StyleUtil.TEXT_PRIMARY
+                ),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+        section.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.setMaximumSize(new Dimension(550, 220));
+
+        JLabel warningLabel = new JLabel("<html><b>⚠ Warning:</b> This task cannot depend on itself!</html>");
+        warningLabel.setFont(StyleUtil.FONT_SMALL);
+        warningLabel.setForeground(StyleUtil.DANGER);
+        warningLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(warningLabel);
+        section.add(Box.createVerticalStrut(5));
+
+        JLabel instructionLabel = new JLabel("<html>Select tasks that must be completed before this task can start.<br/>Hold Ctrl/Cmd to select multiple tasks.</html>");
+        instructionLabel.setFont(StyleUtil.FONT_SMALL);
+        instructionLabel.setForeground(StyleUtil.TEXT_SECONDARY);
+        instructionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(instructionLabel);
+        section.add(Box.createVerticalStrut(8));
+
+        // Create list model and JList
+        dependencyListModel = new DefaultListModel<>();
+        dependencyList = new JList<>(dependencyListModel);
+        dependencyList.setFont(StyleUtil.FONT_BODY);
+        dependencyList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        dependencyList.setVisibleRowCount(4);
+        dependencyList.setBackground(Color.WHITE);
+        dependencyList.setForeground(StyleUtil.TEXT_PRIMARY);
+
+        // Custom cell renderer to show task info
+        dependencyList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value,
+                                                          int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Task) {
+                    Task t = (Task) value;
+                    setText(String.format("#%d - %s [%s]",
+                            t.getTaskId(),
+                            t.getTaskName(),
+                            getStatusName(t.getStatusId())));
+                }
+                if (isSelected) {
+                    setBackground(StyleUtil.PRIMARY_LIGHT);
+                    setForeground(StyleUtil.TEXT_PRIMARY);
+                } else {
+                    setBackground(Color.WHITE);
+                    setForeground(StyleUtil.TEXT_PRIMARY);
+                }
+                return this;
+            }
+        });
+
+        JScrollPane scrollPane = new JScrollPane(dependencyList);
+        scrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(scrollPane);
+
+        // Load available tasks and pre-select existing dependencies
+        loadAvailableTasksForDependencies();
+
+        return section;
+    }
+
+    private void loadAvailableTasksForDependencies() {
+        dependencyListModel.clear();
+        System.out.println("📋 [EDIT] Loading tasks for dependencies...");
+
+        if (task == null || task.getProjectId() == null) {
+            System.out.println("⚠ [EDIT] No task or project");
+            return;
+        }
+
+        System.out.println("✓ [EDIT] Current task: #" + task.getTaskId() + " - " + task.getTaskName());
+        System.out.println("✓ [EDIT] Project ID: " + task.getProjectId());
+
+        // Load all tasks from same project
+        List<Task> projectTasks = taskDao.findByProject(task.getProjectId());
+        System.out.println("✓ [EDIT] Found " + projectTasks.size() + " tasks in this project");
+
+        // Load existing dependencies
+        originalDependencyIds = taskDependencyDao.getDependencyIdsForTask(task.getTaskId());
+        System.out.println("✓ [EDIT] Existing dependencies: " + originalDependencyIds);
+
+        List<Integer> indicesToSelect = new ArrayList<>();
+        int index = 0;
+
+        for (Task t : projectTasks) {
+            // Exclude the current task itself (prevent self-dependency)
+            if (t.getTaskId() != task.getTaskId()) {
+                dependencyListModel.addElement(t);
+                System.out.println("  - Added task: #" + t.getTaskId() + " - " + t.getTaskName());
+
+                // Mark for selection if it's an existing dependency
+                if (originalDependencyIds.contains(t.getTaskId())) {
+                    indicesToSelect.add(index);
+                    System.out.println("    └─ Will pre-select (existing dependency)");
+                }
+                index++;
+            }
+        }
+
+        // Pre-select existing dependencies
+        if (!indicesToSelect.isEmpty()) {
+            int[] indices = indicesToSelect.stream().mapToInt(Integer::intValue).toArray();
+            dependencyList.setSelectedIndices(indices);
+            System.out.println("✓ [EDIT] Pre-selected " + indicesToSelect.size() + " existing dependencies");
+        }
+    }
+
+    private String getStatusName(int statusId) {
+        TaskStatus status = taskStatusDao.findById(statusId);
+        return status != null ? status.getStatusName() : "Unknown";
+    }
+
+    private void updateDependencies() {
+        // Get currently selected dependencies
+        List<Task> selectedDependencies = dependencyList.getSelectedValuesList();
+        List<Integer> newDependencyIds = new ArrayList<>();
+
+        for (Task t : selectedDependencies) {
+            newDependencyIds.add(t.getTaskId());
+        }
+
+        // Find dependencies to remove (in original but not in new)
+        for (Integer oldDepId : originalDependencyIds) {
+            if (!newDependencyIds.contains(oldDepId)) {
+                taskDependencyDao.delete(task.getTaskId(), oldDepId);
+                System.out.println("✗ Removed dependency: Task " + task.getTaskId() +
+                        " no longer depends on Task " + oldDepId);
+            }
+        }
+
+        // Find dependencies to add (in new but not in original)
+        for (Integer newDepId : newDependencyIds) {
+            if (!originalDependencyIds.contains(newDepId)) {
+                taskDependencyDao.addDependency(task.getTaskId(), newDepId);
+                System.out.println("✓ Added dependency: Task " + task.getTaskId() +
+                        " now depends on Task " + newDepId);
+            }
+        }
+
+        int removed = (int) originalDependencyIds.stream().filter(id -> !newDependencyIds.contains(id)).count();
+        int added = (int) newDependencyIds.stream().filter(id -> !originalDependencyIds.contains(id)).count();
+
+        if (removed > 0 || added > 0) {
+            System.out.println("✓ Dependencies updated: " + added + " added, " + removed + " removed");
+        }
     }
 }

@@ -7,7 +7,66 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TaskDependencyDao{
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Collections;
+
+public class TaskDependencyDao {
+
+
+    public Map<Integer, List<String>> getDependencyNamesForTasks(List<Integer> taskIds) {
+        Map<Integer, List<String>> result = new HashMap<>();
+
+        // Initialize empty lists for all task IDs
+        for (Integer taskId : taskIds) {
+            result.put(taskId, new ArrayList<>());
+        }
+
+        if (taskIds.isEmpty()) {
+            return result;
+        }
+
+        // Build SQL with IN clause
+        // Example: WHERE td.task_id IN (?, ?, ?)
+        String placeholders = String.join(",", Collections.nCopies(taskIds.size(), "?"));
+
+        String sql = "SELECT td.task_id, t.task_name AS dependency_name " +
+                "FROM TaskDependencies td " +
+                "INNER JOIN Tasks t ON td.depends_on_task_id = t.task_id " +
+                "WHERE td.task_id IN (" + placeholders + ") " +
+                "ORDER BY td.task_id, t.task_name";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Set parameters for IN clause
+            for (int i = 0; i < taskIds.size(); i++) {
+                pstmt.setInt(i + 1, taskIds.get(i));
+            }
+
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                int taskId = rs.getInt("task_id");
+                String dependencyName = rs.getString("dependency_name");
+
+                result.get(taskId).add(dependencyName);
+            }
+
+            rs.close();
+
+            System.out.println("✓ Fetched dependencies for " + taskIds.size() + " tasks in 1 query");
+
+        } catch (SQLException e) {
+            System.err.println("Error fetching dependency names: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
+
 
     // ==================== HELPER METHOD ====================
     private TaskDependency extractTaskDependencyFromResultSet(ResultSet rs) throws SQLException {
@@ -19,14 +78,15 @@ public class TaskDependencyDao{
     }
 
     // ==================== CREATE ====================
+
     /**
      * Add a dependency: taskId depends on dependsOnTaskId
      */
     public void insert(TaskDependency dependency) {
         String sql = """
-            INSERT INTO TaskDependencies (task_id, depends_on_task_id)
-            VALUES (?, ?)
-            """;
+                INSERT INTO TaskDependencies (task_id, depends_on_task_id)
+                VALUES (?, ?)
+                """;
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -52,16 +112,17 @@ public class TaskDependencyDao{
     }
 
     // ==================== READ ====================
+
     /**
      * Get all tasks that a specific task depends on
      * (What must be completed before this task can start?)
      */
     public List<TaskDependency> findDependenciesForTask(int taskId) {
         String sql = """
-            SELECT dependency_id, task_id, depends_on_task_id
-            FROM TaskDependencies
-            WHERE task_id = ?
-            """;
+                SELECT dependency_id, task_id, depends_on_task_id
+                FROM TaskDependencies
+                WHERE task_id = ?
+                """;
 
         List<TaskDependency> dependencies = new ArrayList<>();
 
@@ -88,10 +149,10 @@ public class TaskDependencyDao{
      */
     public List<TaskDependency> findDependentTasks(int taskId) {
         String sql = """
-            SELECT dependency_id, task_id, depends_on_task_id
-            FROM TaskDependencies
-            WHERE depends_on_task_id = ?
-            """;
+                SELECT dependency_id, task_id, depends_on_task_id
+                FROM TaskDependencies
+                WHERE depends_on_task_id = ?
+                """;
 
         List<TaskDependency> dependents = new ArrayList<>();
 
@@ -117,10 +178,10 @@ public class TaskDependencyDao{
      */
     public List<Integer> getDependencyIdsForTask(int taskId) {
         String sql = """
-            SELECT depends_on_task_id
-            FROM TaskDependencies
-            WHERE task_id = ?
-            """;
+                SELECT depends_on_task_id
+                FROM TaskDependencies
+                WHERE task_id = ?
+                """;
 
         List<Integer> dependencyIds = new ArrayList<>();
 
@@ -146,10 +207,10 @@ public class TaskDependencyDao{
      */
     public List<Integer> getDependentTaskIds(int taskId) {
         String sql = """
-            SELECT task_id
-            FROM TaskDependencies
-            WHERE depends_on_task_id = ?
-            """;
+                SELECT task_id
+                FROM TaskDependencies
+                WHERE depends_on_task_id = ?
+                """;
 
         List<Integer> dependentIds = new ArrayList<>();
 
@@ -175,10 +236,10 @@ public class TaskDependencyDao{
      */
     public boolean hasDependency(int taskId, int dependsOnTaskId) {
         String sql = """
-            SELECT 1
-            FROM TaskDependencies
-            WHERE task_id = ? AND depends_on_task_id = ?
-            """;
+                SELECT 1
+                FROM TaskDependencies
+                WHERE task_id = ? AND depends_on_task_id = ?
+                """;
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -236,14 +297,15 @@ public class TaskDependencyDao{
     }
 
     // ==================== DELETE ====================
+
     /**
      * Remove a specific dependency
      */
     public void delete(int taskId, int dependsOnTaskId) {
         String sql = """
-            DELETE FROM TaskDependencies
-            WHERE task_id = ? AND depends_on_task_id = ?
-            """;
+                DELETE FROM TaskDependencies
+                WHERE task_id = ? AND depends_on_task_id = ?
+                """;
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -268,9 +330,9 @@ public class TaskDependencyDao{
      */
     public void deleteAllDependenciesForTask(int taskId) {
         String sql = """
-            DELETE FROM TaskDependencies
-            WHERE task_id = ? OR depends_on_task_id = ?
-            """;
+                DELETE FROM TaskDependencies
+                WHERE task_id = ? OR depends_on_task_id = ?
+                """;
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -286,6 +348,7 @@ public class TaskDependencyDao{
     }
 
     // ==================== UTILITY METHODS ====================
+
     /**
      * Count how many dependencies a task has
      */

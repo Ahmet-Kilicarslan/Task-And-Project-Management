@@ -12,6 +12,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class TaskListPanel extends JPanel {
 
@@ -23,6 +24,7 @@ public class TaskListPanel extends JPanel {
     private ProjectDao projectDao;
     private TaskStatusDao statusDao;
     private TaskPriorityDao priorityDao;
+    private TaskDependencyDao dependencyDao;
 
     // UI Components
     private JTable taskTable;
@@ -39,6 +41,7 @@ public class TaskListPanel extends JPanel {
         this.projectDao = new ProjectDao();
         this.statusDao = new TaskStatusDao();
         this.priorityDao = new TaskPriorityDao();
+        this.dependencyDao = new TaskDependencyDao();
 
         setLayout(new BorderLayout());
         setBackground(StyleUtil.BACKGROUND);
@@ -149,7 +152,7 @@ public class TaskListPanel extends JPanel {
         panel.setBorder(StyleUtil.createPaddingBorder(20));
 
         // Table model
-        String[] columnNames = {"ID", "Task Name", "Project", "Status", "Priority", "Due Date"};
+        String[] columnNames = {"ID", "Task Name", "Project", "Status", "Dependencies", "Priority", "Due Date"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -170,12 +173,13 @@ public class TaskListPanel extends JPanel {
         taskTable.setSelectionForeground(StyleUtil.TEXT_PRIMARY);
 
         // Column widths
-        taskTable.getColumnModel().getColumn(0).setPreferredWidth(50);
-        taskTable.getColumnModel().getColumn(1).setPreferredWidth(300);
-        taskTable.getColumnModel().getColumn(2).setPreferredWidth(150);
-        taskTable.getColumnModel().getColumn(3).setPreferredWidth(120);
-        taskTable.getColumnModel().getColumn(4).setPreferredWidth(100);
-        taskTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+        taskTable.getColumnModel().getColumn(0).setPreferredWidth(50);   // ID
+        taskTable.getColumnModel().getColumn(1).setPreferredWidth(250);  // Task Name (slightly reduced)
+        taskTable.getColumnModel().getColumn(2).setPreferredWidth(130);  // Project (slightly reduced)
+        taskTable.getColumnModel().getColumn(3).setPreferredWidth(100);  // Status (slightly reduced)
+        taskTable.getColumnModel().getColumn(4).setPreferredWidth(200);  // Dependencies (NEW)
+        taskTable.getColumnModel().getColumn(5).setPreferredWidth(90);   // Priority (slightly reduced)
+        taskTable.getColumnModel().getColumn(6).setPreferredWidth(100);  // Due Date
 
         // Double-click to view details
         taskTable.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -228,12 +232,20 @@ public class TaskListPanel extends JPanel {
 
         List<Task> tasks = taskDao.findAll();
 
+        // ✅ BATCH OPTIMIZATION: Get ALL dependencies in ONE query
+        List<Integer> taskIds = new ArrayList<>();
+        for (Task task : tasks) {
+            taskIds.add(task.getTaskId());
+        }
+        Map<Integer, List<String>> allDependencies = dependencyDao.getDependencyNamesForTasks(taskIds);
+
         for (Task task : tasks) {
             Object[] row = {
                     task.getTaskId(),
                     task.getTaskName(),
                     getProjectName(task.getProjectId()),
                     getStatusName(task.getStatusId()),
+                    formatDependencies(allDependencies.get(task.getTaskId())),  // Use pre-fetched data
                     getPriorityName(task.getPriorityId()),
                     task.getDueDate() != null ? task.getDueDate().toString() : "-"
             };
@@ -252,8 +264,9 @@ public class TaskListPanel extends JPanel {
         tableModel.setRowCount(0);
 
         List<Task> tasks = taskDao.findAll();
-        int count = 0;
+        List<Task> filteredTasks = new ArrayList<>();
 
+        // First pass: Apply filters
         for (Task task : tasks) {
             // Filter by search
             if (!searchText.isEmpty()) {
@@ -286,19 +299,31 @@ public class TaskListPanel extends JPanel {
                 }
             }
 
+            filteredTasks.add(task);
+        }
+
+        // ✅ BATCH OPTIMIZATION: Get dependencies for filtered tasks only
+        List<Integer> taskIds = new ArrayList<>();
+        for (Task task : filteredTasks) {
+            taskIds.add(task.getTaskId());
+        }
+        Map<Integer, List<String>> allDependencies = dependencyDao.getDependencyNamesForTasks(taskIds);
+
+        // Second pass: Build table rows
+        for (Task task : filteredTasks) {
             Object[] row = {
                     task.getTaskId(),
                     task.getTaskName(),
                     getProjectName(task.getProjectId()),
                     getStatusName(task.getStatusId()),
+                    formatDependencies(allDependencies.get(task.getTaskId())),  // Use pre-fetched data
                     getPriorityName(task.getPriorityId()),
                     task.getDueDate() != null ? task.getDueDate().toString() : "-"
             };
             tableModel.addRow(row);
-            count++;
         }
 
-        updateStats(count);
+        updateStats(filteredTasks.size());
     }
 
     private void viewSelectedTask() {
@@ -346,5 +371,28 @@ public class TaskListPanel extends JPanel {
     public void refreshData() {
         loadTasks();
         loadProjectFilter();
+    }
+
+    /**
+     * Format dependency list for display
+     * Shows first 2 dependencies, then "... +N more" if there are more
+     * Returns "No dependencies" if list is empty
+     *
+     * @param dependencies Pre-fetched list of dependency names
+     * @return Formatted string for table cell
+     */
+    private String formatDependencies(List<String> dependencies) {
+        if (dependencies == null || dependencies.isEmpty()) {
+            return "No dependencies";
+        }
+
+        // Show first 2, then add "... +N more"
+        if (dependencies.size() <= 2) {
+            return String.join(", ", dependencies);
+        } else {
+            String first2 = String.join(", ", dependencies.subList(0, 2));
+            int remaining = dependencies.size() - 2;
+            return first2 + " ... +" + remaining + " more";
+        }
     }
 }
