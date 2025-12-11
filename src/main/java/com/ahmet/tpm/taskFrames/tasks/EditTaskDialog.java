@@ -123,6 +123,13 @@ public class EditTaskDialog extends JDialog {
         panel.add(titleLabel);
         panel.add(Box.createVerticalStrut(20));
 
+        // ✅ NEW: Warning panel for incomplete dependencies (will be populated later)
+        JPanel warningPanel = createDependencyWarningPanel();
+        warningPanel.setName("dependencyWarning");  // Name it so we can find it later
+        warningPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(warningPanel);
+        panel.add(Box.createVerticalStrut(10));
+
         // Project selector
         cmbProject = new JComboBox<>();
         cmbProject.setFont(StyleUtil.FONT_BODY);
@@ -248,6 +255,24 @@ public class EditTaskDialog extends JDialog {
         return panel;
     }
 
+    /**
+     * Create warning panel for incomplete dependencies
+     * Initially empty, will be populated by applyDependencyValidation()
+     */
+    private JPanel createDependencyWarningPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(new Color(255, 243, 205));  // Light yellow/warning color
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(255, 193, 7), 2),
+                BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
+        panel.setVisible(false);  // Hidden by default
+        panel.setMaximumSize(new Dimension(550, 150));
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return panel;
+    }
+
     private JPanel createButtonPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 15));
         panel.setBackground(StyleUtil.SURFACE);
@@ -328,6 +353,142 @@ public class EditTaskDialog extends JDialog {
                 break;
             }
         }
+
+        // ✅ NEW: Apply dependency validation for DONE status
+        applyDependencyValidation();
+    }
+
+    /**
+     * Check if all dependencies are complete and disable DONE status if not
+     */
+    private void applyDependencyValidation() {
+        // Check if all dependencies are completed
+        if (!taskDao.areAllDependenciesCompleted(task.getTaskId())) {
+            // Get incomplete dependency names
+            List<String> incompleteNames = taskDao.getIncompleteDependencyNames(task.getTaskId());
+
+            // ✅ Show visual warning panel
+            showDependencyWarning(incompleteNames);
+
+            // Find and disable DONE status in combobox
+            for (int i = 0; i < cmbStatus.getItemCount(); i++) {
+                TaskStatus status = cmbStatus.getItemAt(i);
+                if ("DONE".equals(status.getStatusName())) {
+                    // Create custom renderer to show disabled item
+                    cmbStatus.setRenderer(new DefaultListCellRenderer() {
+                        @Override
+                        public Component getListCellRendererComponent(JList<?> list, Object value,
+                                                                      int index, boolean isSelected, boolean cellHasFocus) {
+                            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                            if (value instanceof TaskStatus) {
+                                TaskStatus s = (TaskStatus) value;
+                                setText(s.getStatusName());
+
+                                // Disable DONE status visually
+                                if ("DONE".equals(s.getStatusName())) {
+                                    setForeground(Color.GRAY);
+                                    setText(s.getStatusName() + " (dependencies incomplete)");
+                                }
+                            }
+                            return this;
+                        }
+                    });
+
+                    // Add action listener to prevent selecting DONE
+                    cmbStatus.addActionListener(e -> {
+                        TaskStatus selected = (TaskStatus) cmbStatus.getSelectedItem();
+                        if (selected != null && "DONE".equals(selected.getStatusName())) {
+                            if (!taskDao.areAllDependenciesCompleted(task.getTaskId())) {
+                                // Show warning and revert selection
+                                String message = "Cannot mark this task as DONE.\n\n" +
+                                        "The following dependencies must be completed first:\n\n" +
+                                        String.join("\n", incompleteNames);
+
+                                JOptionPane.showMessageDialog(this,
+                                        message,
+                                        "Dependencies Not Complete",
+                                        JOptionPane.WARNING_MESSAGE);
+
+                                // Revert to previous status
+                                for (int j = 0; j < cmbStatus.getItemCount(); j++) {
+                                    if (cmbStatus.getItemAt(j).getStatusId() == task.getStatusId()) {
+                                        cmbStatus.setSelectedIndex(j);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    System.out.println("⚠ DONE status disabled - incomplete dependencies:");
+                    for (String name : incompleteNames) {
+                        System.out.println("  - " + name);
+                    }
+
+                    break;
+                }
+            }
+        } else {
+            System.out.println("✓ All dependencies complete - DONE status available");
+        }
+    }
+
+    /**
+     * Show warning panel with incomplete dependencies
+     */
+    private void showDependencyWarning(List<String> incompleteNames) {
+        // Find the warning panel
+        Container contentPane = getContentPane();
+        JPanel warningPanel = findComponentByName((Container) contentPane.getComponent(0), "dependencyWarning");
+
+        if (warningPanel != null) {
+            warningPanel.removeAll();
+
+            // Warning icon and title
+            JLabel titleLabel = new JLabel("⚠ Cannot Mark as DONE");
+            titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            titleLabel.setForeground(new Color(138, 109, 0));
+            titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            warningPanel.add(titleLabel);
+            warningPanel.add(Box.createVerticalStrut(8));
+
+            // Explanation
+            JLabel explanationLabel = new JLabel("Complete these dependencies first:");
+            explanationLabel.setFont(StyleUtil.FONT_BODY);
+            explanationLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            warningPanel.add(explanationLabel);
+            warningPanel.add(Box.createVerticalStrut(5));
+
+            // List of incomplete dependencies
+            for (String depName : incompleteNames) {
+                JLabel depLabel = new JLabel("  • " + depName);
+                depLabel.setFont(StyleUtil.FONT_BODY);
+                depLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                warningPanel.add(depLabel);
+            }
+
+            warningPanel.setVisible(true);
+            warningPanel.revalidate();
+            warningPanel.repaint();
+        }
+    }
+
+    /**
+     * Helper method to find component by name
+     */
+    private JPanel findComponentByName(Container container, String name) {
+        for (Component comp : container.getComponents()) {
+            if (name.equals(comp.getName()) && comp instanceof JPanel) {
+                return (JPanel) comp;
+            }
+            if (comp instanceof Container) {
+                JPanel found = findComponentByName((Container) comp, name);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
 
     private void saveChanges() {

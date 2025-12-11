@@ -3,6 +3,9 @@ package com.ahmet.tpm.dao;
 
 import com.ahmet.tpm.config.DatabaseConfig;
 import com.ahmet.tpm.models.Task;
+import com.ahmet.tpm.models.TaskStatus;
+
+import com.ahmet.tpm.dao.TaskStatusDao;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -10,6 +13,94 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TaskDao {
+
+    TaskStatusDao taskStatusDao = new TaskStatusDao();
+
+
+    public boolean areAllDependenciesCompleted(int taskId) {
+        String sql = "SELECT COUNT(*) as incomplete_count " +
+                "FROM TaskDependencies td " +
+                "JOIN Tasks t ON td.depends_on_task_id = t.task_id " +
+                "JOIN TaskStatus ts ON t.status_id = ts.status_id " +
+                "WHERE td.task_id = ? " +
+                "AND ts.status_name != 'DONE'";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, taskId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                int incompleteCount = rs.getInt("incomplete_count");
+                return incompleteCount == 0;  // true if no incomplete dependencies
+            }
+
+            rs.close();
+
+        } catch (SQLException e) {
+            System.err.println("Error checking dependencies: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return false;  // If error occurs, assume not ready
+    }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// METHOD 2: Get list of incomplete dependency names (for error messages)
+// ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Get names of dependencies that are not yet completed
+     *
+     * @param taskId The task to check
+     * @return List of incomplete dependency task names
+     */
+    public List<String> getIncompleteDependencyNames(int taskId) {
+        List<String> incompleteNames = new ArrayList<>();
+
+        String sql = "SELECT t.task_name, ts.status_name " +
+                "FROM TaskDependencies td " +
+                "JOIN Tasks t ON td.depends_on_task_id = t.task_id " +
+                "JOIN TaskStatus ts ON t.status_id = ts.status_id " +
+                "WHERE td.task_id = ? " +
+                "AND ts.status_name != 'DONE' " +
+                "ORDER BY t.task_name";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, taskId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                String taskName = rs.getString("task_name");
+                String statusName = rs.getString("status_name");
+                incompleteNames.add(taskName + " [" + statusName + "]");
+            }
+
+            rs.close();
+
+        } catch (SQLException e) {
+            System.err.println("Error getting incomplete dependencies: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return incompleteNames;
+    }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// METHOD 3: Modified update() method with validation
+// ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * UPDATE YOUR EXISTING update() METHOD TO INCLUDE THIS VALIDATION
+     *
+     * Add this code at the BEGINNING of your update() method, before the SQL UPDATE
+     */
+
+
+
 
    // ==================== HELPER METHOD ====================
 
@@ -353,7 +444,24 @@ public class TaskDao {
     }
 
     // ==================== UPDATE ====================
-    public void update(Task task) {
+    public void update(Task task) throws SQLException {
+
+
+        TaskStatus newStatus = taskStatusDao.findById(task.getStatusId());
+
+        if (newStatus != null && "DONE".equals(newStatus.getStatusName())) {
+            // Check if all dependencies are completed
+            if (!areAllDependenciesCompleted(task.getTaskId())) {
+                // Get incomplete dependency names for error message
+                List<String> incompleteNames = getIncompleteDependencyNames(task.getTaskId());
+
+                String errorMessage = "Cannot mark task as DONE. The following dependencies must be completed first:\n" +
+                        String.join("\n", incompleteNames);
+
+                System.err.println("❌ VALIDATION FAILED: " + errorMessage);
+                throw new SQLException(errorMessage);
+            }
+
         String sql = """
             UPDATE Tasks
             SET project_id = ?,
@@ -391,7 +499,7 @@ public class TaskDao {
         } catch (SQLException e) {
             System.err.println("✗ Error updating task: " + e.getMessage());
         }
-    }
+    }}
 
     public void updateStatus(int taskId, int newStatusId) {
         String sql = """
