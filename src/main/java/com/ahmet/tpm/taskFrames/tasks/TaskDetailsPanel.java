@@ -25,6 +25,7 @@ public class TaskDetailsPanel extends JPanel {
     private UserDao userDao;
     private TaskMemberDao taskMemberDao;
     private TimeTrackingDao timeTrackingDao;
+    private TaskCommentDao taskCommentDao;
 
     // Current task
     private Task currentTask;
@@ -43,6 +44,7 @@ public class TaskDetailsPanel extends JPanel {
     private JLabel lblSubtaskCount;
     private JTextArea txtDescription;
     private JPanel commentsPanel;
+    private TimeTrackingPanel timeTrackingPanel;
 
     public TaskDetailsPanel(TasksModulePanel parentModule, TaskMainFrame mainFrame) {
         this.parentModule = parentModule;
@@ -54,6 +56,7 @@ public class TaskDetailsPanel extends JPanel {
         this.userDao = new UserDao();
         this.taskMemberDao = new TaskMemberDao();
         this.timeTrackingDao = new TimeTrackingDao();
+        this.taskCommentDao = new TaskCommentDao();
 
         setLayout(new BorderLayout());
         setBackground(StyleUtil.BACKGROUND);
@@ -97,11 +100,15 @@ public class TaskDetailsPanel extends JPanel {
         JButton btnAssign = ComponentFactory.createSecondaryButton("Manage Assignees");
         btnAssign.addActionListener(e -> manageAssignees());
 
+        JButton btnLogTime = ComponentFactory.createSecondaryButton("Log Time");
+        btnLogTime.addActionListener(e -> openLogTimeDialog());
+
         JButton btnDelete = ComponentFactory.createDangerButton("Delete");
         btnDelete.addActionListener(e -> deleteTask());
 
         actionPanel.add(btnEdit);
         actionPanel.add(btnAssign);
+        actionPanel.add(btnLogTime);
         actionPanel.add(btnDelete);
 
         panel.add(actionPanel, BorderLayout.EAST);
@@ -143,6 +150,18 @@ public class TaskDetailsPanel extends JPanel {
         JPanel assigneesCard = createAssigneesCard();
         assigneesCard.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(assigneesCard);
+        panel.add(Box.createVerticalStrut(20));
+
+        // Comments Section
+        JPanel commentsCard = createCommentsCard();
+        commentsCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(commentsCard);
+        panel.add(Box.createVerticalStrut(20));
+
+        // Time Tracking Card
+        JPanel timeEntriesCard = createTimeEntriesCard();
+        timeEntriesCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(timeEntriesCard);
 
         return panel;
     }
@@ -234,7 +253,7 @@ public class TaskDetailsPanel extends JPanel {
     private JPanel createTimeCard() {
         JPanel card = ComponentFactory.createCard();
         card.setLayout(new BorderLayout(0, 15));
-        card.setMaximumSize(new Dimension(800, 150));
+        card.setMaximumSize(new Dimension(800, 180));
 
         JLabel titleLabel = ComponentFactory.createHeadingLabel("Time & Progress");
         card.add(titleLabel, BorderLayout.NORTH);
@@ -244,11 +263,9 @@ public class TaskDetailsPanel extends JPanel {
 
         // Estimated
         JPanel estimatedPanel = createStatBox("Estimated", "0h", StyleUtil.INFO);
-        lblEstimatedHours = (JLabel) estimatedPanel.getComponent(0);
 
         // Actual
         JPanel actualPanel = createStatBox("Actual", "0h", StyleUtil.WARNING);
-        lblActualHours = (JLabel) actualPanel.getComponent(0);
 
         // Remaining
         JPanel remainingPanel = createStatBox("Remaining", "0h", StyleUtil.SUCCESS);
@@ -265,7 +282,7 @@ public class TaskDetailsPanel extends JPanel {
     private JPanel createStatBox(String label, String value, Color color) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(StyleUtil.BACKGROUND);
+        panel.setBackground(Color.WHITE);
         panel.setBorder(StyleUtil.createPaddingBorder(15));
 
         JLabel valueLabel = new JLabel(value);
@@ -310,6 +327,8 @@ public class TaskDetailsPanel extends JPanel {
         displayTaskData();
         loadTimeTracking();
         loadAssignees();
+        loadComments();
+        initializeTimeTrackingPanel();
     }
 
     private void displayTaskData() throws SQLException {
@@ -347,6 +366,65 @@ public class TaskDetailsPanel extends JPanel {
         // Description
         txtDescription.setText(currentTask.getDescription() != null ?
                 currentTask.getDescription() : "No description provided.");
+
+        // Update Time & Progress card
+        updateTimeProgressCard();
+    }
+
+    private void updateTimeProgressCard() {
+        if (currentTask == null) return;
+
+        // Find the Time & Progress card
+        Component[] components = ((JPanel)((JScrollPane)getComponent(1)).getViewport().getView()).getComponents();
+        for (Component comp : components) {
+            if (comp instanceof JPanel) {
+                JPanel panel = (JPanel) comp;
+                if (panel.getComponentCount() > 0 && panel.getComponent(0) instanceof JLabel) {
+                    JLabel titleLabel = (JLabel) panel.getComponent(0);
+                    if (titleLabel.getText().equals("Time & Progress")) {
+                        // Found the Time & Progress card
+                        if (panel.getComponentCount() > 1 && panel.getComponent(1) instanceof JPanel) {
+                            JPanel statsGrid = (JPanel) panel.getComponent(1);
+
+                            // Get estimated hours
+                            double estimated = currentTask.getEstimatedHours();
+
+                            // Get actual hours
+                            double actual = timeTrackingDao.getTotalHoursForTask(currentTask.getTaskId());
+
+                            // Calculate remaining
+                            double remaining = estimated - actual;
+
+                            // Update each stat box
+                            if (statsGrid.getComponentCount() >= 3) {
+                                updateStatBox((JPanel) statsGrid.getComponent(0), estimated + "h");
+                                updateStatBox((JPanel) statsGrid.getComponent(1), actual + "h");
+
+                                // Color code remaining based on value
+                                JPanel remainingPanel = (JPanel) statsGrid.getComponent(2);
+                                JLabel remainingValue = (JLabel) remainingPanel.getComponent(0);
+                                remainingValue.setText(remaining + "h");
+                                if (remaining < 0) {
+                                    remainingValue.setForeground(StyleUtil.DANGER); // Over budget
+                                } else if (remaining == 0) {
+                                    remainingValue.setForeground(StyleUtil.WARNING); // Exactly on budget
+                                } else {
+                                    remainingValue.setForeground(StyleUtil.SUCCESS); // Under budget
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private void updateStatBox(JPanel statBox, String value) {
+        if (statBox.getComponentCount() > 0 && statBox.getComponent(0) instanceof JLabel) {
+            JLabel valueLabel = (JLabel) statBox.getComponent(0);
+            valueLabel.setText(value);
+        }
     }
 
     private void loadTimeTracking() {
@@ -354,6 +432,9 @@ public class TaskDetailsPanel extends JPanel {
 
         double actualHours = timeTrackingDao.getTotalHoursForTask(currentTask.getTaskId());
         lblActualHours.setText(actualHours + " hours");
+
+        // Also update the Time & Progress card
+        updateTimeProgressCard();
     }
 
     private void loadAssignees() {
@@ -419,5 +500,367 @@ public class TaskDetailsPanel extends JPanel {
         if (currentTask != null) {
             loadTask(currentTask.getTaskId());
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // COMMENTS SECTION METHODS
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Create the comments card with input field and display area
+     */
+    private JPanel createCommentsCard() {
+        JPanel card = ComponentFactory.createCard();
+        card.setLayout(new BorderLayout(0, 15));
+        card.setMaximumSize(new Dimension(800, 500));
+
+        // Title with comment count
+        JLabel titleLabel = ComponentFactory.createHeadingLabel("Comments");
+        card.add(titleLabel, BorderLayout.NORTH);
+
+        // Comments display area (scrollable)
+        commentsPanel = new JPanel();
+        commentsPanel.setLayout(new BoxLayout(commentsPanel, BoxLayout.Y_AXIS));
+        commentsPanel.setBackground(StyleUtil.SURFACE);
+
+        JScrollPane commentsScrollPane = new JScrollPane(commentsPanel);
+        commentsScrollPane.setBorder(BorderFactory.createLineBorder(StyleUtil.BORDER));
+        commentsScrollPane.setBackground(StyleUtil.SURFACE);
+        commentsScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        card.add(commentsScrollPane, BorderLayout.CENTER);
+
+        // Input area at bottom
+        JPanel inputPanel = createCommentInputPanel();
+        card.add(inputPanel, BorderLayout.SOUTH);
+
+        return card;
+    }
+
+    /**
+     * Create input panel for posting new comments
+     */
+    private JPanel createCommentInputPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(StyleUtil.SURFACE);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, StyleUtil.BORDER),
+                BorderFactory.createEmptyBorder(15, 0, 0, 0)
+        ));
+
+        // Text area for writing comment
+        JTextArea txtNewComment = new JTextArea(3, 40);
+        txtNewComment.setFont(StyleUtil.FONT_BODY);
+        txtNewComment.setLineWrap(true);
+        txtNewComment.setWrapStyleWord(true);
+        txtNewComment.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(StyleUtil.BORDER),
+                BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        ));
+        txtNewComment.setBackground(Color.WHITE);
+
+        JScrollPane scrollPane = new JScrollPane(txtNewComment);
+        scrollPane.setPreferredSize(new Dimension(700, 80));
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        // Button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonPanel.setBackground(StyleUtil.SURFACE);
+
+        JButton btnPost = ComponentFactory.createPrimaryButton("Post Comment");
+        btnPost.addActionListener(e -> {
+            String commentText = txtNewComment.getText().trim();
+            if (commentText.isEmpty()) {
+                UIHelper.showError(mainFrame, "Comment cannot be empty");
+                return;
+            }
+
+            postComment(commentText);
+            txtNewComment.setText("");  // Clear input
+        });
+
+        JButton btnCancel = ComponentFactory.createSecondaryButton("Clear");
+        btnCancel.addActionListener(e -> txtNewComment.setText(""));
+
+        buttonPanel.add(btnPost);
+        buttonPanel.add(btnCancel);
+
+        panel.add(buttonPanel, BorderLayout.EAST);
+
+        return panel;
+    }
+
+    /**
+     * Load and display all comments for current task
+     */
+    private void loadComments() {
+        if (currentTask == null || commentsPanel == null) return;
+
+        commentsPanel.removeAll();
+
+        List<TaskComment> comments = taskCommentDao.findByTask(currentTask.getTaskId());
+
+        if (comments.isEmpty()) {
+            JLabel noCommentsLabel = ComponentFactory.createBodyLabel("No comments yet. Be the first to comment!");
+            noCommentsLabel.setForeground(StyleUtil.TEXT_SECONDARY);
+            noCommentsLabel.setBorder(StyleUtil.createPaddingBorder(20));
+            commentsPanel.add(noCommentsLabel);
+        } else {
+            for (TaskComment comment : comments) {
+                JPanel commentPanel = createCommentPanel(comment);
+                commentPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                commentsPanel.add(commentPanel);
+                commentsPanel.add(Box.createVerticalStrut(10));
+            }
+        }
+
+        commentsPanel.revalidate();
+        commentsPanel.repaint();
+    }
+
+    /**
+     * Create a panel for displaying a single comment
+     */
+    private JPanel createCommentPanel(TaskComment comment) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(StyleUtil.BORDER),
+                BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
+        panel.setMaximumSize(new Dimension(750, Integer.MAX_VALUE));
+
+        // Header: User name, timestamp, and actions
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(Color.WHITE);
+
+        // Left side: User and time
+        JPanel userTimePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        userTimePanel.setBackground(Color.WHITE);
+
+        try {
+            User user = userDao.findById(comment.getUserId());
+            String userName = user != null ? user.getFullName() : "Unknown User";
+
+            JLabel userLabel = new JLabel(userName);
+            userLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            userLabel.setForeground(StyleUtil.PRIMARY);
+            userTimePanel.add(userLabel);
+
+            userTimePanel.add(new JLabel(" • "));
+
+            JLabel timeLabel = new JLabel(formatTimeAgo(comment.getCreatedAt()));
+            timeLabel.setFont(StyleUtil.FONT_SMALL);
+            timeLabel.setForeground(StyleUtil.TEXT_SECONDARY);
+            userTimePanel.add(timeLabel);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        headerPanel.add(userTimePanel, BorderLayout.WEST);
+
+        // Right side: Edit/Delete buttons (only for own comments)
+        int currentUserId = mainFrame.getCurrentUserId();
+        if (comment.getUserId() == currentUserId) {
+            JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+            actionPanel.setBackground(Color.WHITE);
+
+            JButton btnEdit = new JButton("Edit");
+            btnEdit.setFont(StyleUtil.FONT_SMALL);
+            btnEdit.setForeground(StyleUtil.PRIMARY);
+            btnEdit.setBorderPainted(false);
+            btnEdit.setContentAreaFilled(false);
+            btnEdit.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnEdit.addActionListener(e -> editComment(comment));
+
+            JButton btnDelete = new JButton("Delete");
+            btnDelete.setFont(StyleUtil.FONT_SMALL);
+            btnDelete.setForeground(StyleUtil.DANGER);
+            btnDelete.setBorderPainted(false);
+            btnDelete.setContentAreaFilled(false);
+            btnDelete.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnDelete.addActionListener(e -> deleteComment(comment));
+
+            actionPanel.add(btnEdit);
+            actionPanel.add(new JLabel("|"));
+            actionPanel.add(btnDelete);
+
+            headerPanel.add(actionPanel, BorderLayout.EAST);
+        }
+
+        panel.add(headerPanel);
+        panel.add(Box.createVerticalStrut(10));
+
+        // Comment text
+        JTextArea commentTextArea = new JTextArea(comment.getCommentText());
+        commentTextArea.setFont(StyleUtil.FONT_BODY);
+        commentTextArea.setForeground(StyleUtil.TEXT_PRIMARY);
+        commentTextArea.setLineWrap(true);
+        commentTextArea.setWrapStyleWord(true);
+        commentTextArea.setEditable(false);
+        commentTextArea.setBackground(Color.WHITE);
+        commentTextArea.setBorder(null);
+        panel.add(commentTextArea);
+
+        return panel;
+    }
+
+    /**
+     * Format timestamp as "X minutes/hours/days ago"
+     */
+    private String formatTimeAgo(java.time.LocalDateTime timestamp) {
+        java.time.Duration duration = java.time.Duration.between(timestamp, java.time.LocalDateTime.now());
+
+        long seconds = duration.getSeconds();
+
+        if (seconds < 60) {
+            return "just now";
+        } else if (seconds < 3600) {
+            long minutes = seconds / 60;
+            return minutes + (minutes == 1 ? " minute ago" : " minutes ago");
+        } else if (seconds < 86400) {
+            long hours = seconds / 3600;
+            return hours + (hours == 1 ? " hour ago" : " hours ago");
+        } else if (seconds < 604800) {
+            long days = seconds / 86400;
+            return days + (days == 1 ? " day ago" : " days ago");
+        } else {
+            long weeks = seconds / 604800;
+            return weeks + (weeks == 1 ? " week ago" : " weeks ago");
+        }
+    }
+
+    /**
+     * Post a new comment
+     */
+    private void postComment(String commentText) {
+        if (currentTask == null) return;
+
+        int currentUserId = mainFrame.getCurrentUserId();
+
+        TaskComment comment = new TaskComment(currentTask.getTaskId(), currentUserId, commentText);
+        taskCommentDao.insert(comment);
+
+        UIHelper.showSuccess(mainFrame, "Comment posted successfully!");
+        loadComments();  // Refresh comments display
+    }
+
+    /**
+     * Edit an existing comment
+     */
+    private void editComment(TaskComment comment) {
+        String newText = JOptionPane.showInputDialog(
+                mainFrame,
+                "Edit your comment:",
+                comment.getCommentText()
+        );
+
+        if (newText != null && !newText.trim().isEmpty()) {
+            comment.setCommentText(newText.trim());
+            taskCommentDao.update(comment);
+            UIHelper.showSuccess(mainFrame, "Comment updated successfully!");
+            loadComments();  // Refresh display
+        }
+    }
+
+    /**
+     * Delete a comment
+     */
+    private void deleteComment(TaskComment comment) {
+        boolean confirm = UIHelper.showConfirmDialog(mainFrame,
+                "Delete this comment?\n\nThis action cannot be undone.",
+                "Confirm Delete");
+
+        if (confirm) {
+            taskCommentDao.delete(comment.getCommentId());
+            UIHelper.showSuccess(mainFrame, "Comment deleted successfully!");
+            loadComments();  // Refresh display
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TIME TRACKING SECTION METHODS
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Create the time tracking card
+     */
+    private JPanel createTimeEntriesCard() {
+        JPanel card = ComponentFactory.createCard();
+        card.setLayout(new BorderLayout());
+        card.setMaximumSize(new Dimension(800, 400));
+
+        JLabel titleLabel = ComponentFactory.createHeadingLabel("Time Tracking");
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        card.add(titleLabel, BorderLayout.NORTH);
+
+        // Time tracking panel will be initialized when task is loaded
+        JPanel placeholder = new JPanel();
+        placeholder.setBackground(Color.WHITE);
+        placeholder.add(ComponentFactory.createBodyLabel("Loading time entries..."));
+        card.add(placeholder, BorderLayout.CENTER);
+
+        return card;
+    }
+
+    /**
+     * Initialize the time tracking panel once task is loaded
+     */
+    private void initializeTimeTrackingPanel() {
+        if (currentTask == null) return;
+
+        // Find the time entries card and update it with the time tracking panel
+        Component[] components = ((JPanel)((JScrollPane)getComponent(1)).getViewport().getView()).getComponents();
+        for (Component comp : components) {
+            if (comp instanceof JPanel) {
+                JPanel panel = (JPanel) comp;
+                // Find the card with "Time Tracking" title
+                if (panel.getComponentCount() > 0 && panel.getComponent(0) instanceof JLabel) {
+                    JLabel label = (JLabel) panel.getComponent(0);
+                    if (label.getText().equals("Time Tracking")) {
+                        // Remove placeholder and add time tracking panel
+                        if (panel.getComponentCount() > 1) {
+                            panel.remove(1);
+                        }
+
+                        timeTrackingPanel = new TimeTrackingPanel(
+                                mainFrame,
+                                currentTask.getTaskId(),
+                                mainFrame.getCurrentUserId(),
+                                this::loadTimeTracking
+                        );
+                        panel.add(timeTrackingPanel, BorderLayout.CENTER);
+                        panel.revalidate();
+                        panel.repaint();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Open the log time dialog
+     */
+    private void openLogTimeDialog() {
+        if (currentTask == null) return;
+
+        LogTimeDialog dialog = new LogTimeDialog(
+                mainFrame,
+                currentTask.getTaskId(),
+                mainFrame.getCurrentUserId(),
+                () -> {
+                    try {
+                        loadTimeTracking();
+                        if (timeTrackingPanel != null) {
+                            timeTrackingPanel.loadTimeEntries();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+        );
+        dialog.setVisible(true);
     }
 }

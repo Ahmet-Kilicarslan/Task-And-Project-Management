@@ -184,4 +184,32 @@ public class ComponentFactory {
         ));
         return panel;
     }
+
+
+    // ==================== TEXT FIELDS ====================
+
+    /**
+     * Create a styled text field
+     */
+    public static JTextField createTextField() {
+        JTextField textField = new JTextField();
+        textField.setFont(StyleUtil.FONT_BODY);
+        textField.setForeground(Color.BLACK);
+        textField.setBackground(Color.WHITE);
+        textField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(StyleUtil.BORDER),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)
+        ));
+        textField.setPreferredSize(new Dimension(300, 35));
+        return textField;
+    }
+
+    /**
+     * Create a styled text field with placeholder
+     */
+    public static JTextField createTextField(String placeholder) {
+        JTextField textField = createTextField();
+        textField.setToolTipText(placeholder);
+        return textField;
+    }
 }

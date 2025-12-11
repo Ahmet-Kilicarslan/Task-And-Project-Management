@@ -39,10 +39,10 @@ public class TimeTrackingDao {
             stmt.setDate(3, Date.valueOf(timeEntry.getWorkDate()));
             stmt.setDouble(4, timeEntry.getHoursWorked());
             stmt.executeUpdate();
-            System.out.println("✓ Time entry logged successfully!");
+            System.out.println(" Time entry logged successfully!");
 
         } catch (SQLException e) {
-            System.err.println("✗ Error logging time entry: " + e.getMessage());
+            System.err.println(" Error logging time entry: " + e.getMessage());
         }
     }
 
@@ -66,13 +66,13 @@ public class TimeTrackingDao {
                 if (generatedKeys.next()) {
                     Integer generatedId = generatedKeys.getInt(1);
                     timeEntry.setTimeEntryId(generatedId);
-                    System.out.println("✓ Time entry logged with ID: " + generatedId);
+                    System.out.println(" Time entry logged with ID: " + generatedId);
                     return generatedId;
                 }
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error logging time entry: " + e.getMessage());
+            System.err.println(" Error logging time entry: " + e.getMessage());
         }
         return null;
     }
@@ -106,7 +106,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error finding time entry: " + e.getMessage());
+            System.err.println(" Error finding time entry: " + e.getMessage());
         }
         return null;
     }
@@ -135,7 +135,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error finding time entries for task: " + e.getMessage());
+            System.err.println(" Error finding time entries for task: " + e.getMessage());
         }
 
         return entries;
@@ -165,7 +165,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error finding time entries for user: " + e.getMessage());
+            System.err.println(" Error finding time entries for user: " + e.getMessage());
         }
 
         return entries;
@@ -196,7 +196,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error finding time entries by user and date: " + e.getMessage());
+            System.err.println(" Error finding time entries by user and date: " + e.getMessage());
         }
 
         return entries;
@@ -227,7 +227,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error finding time entries by date range: " + e.getMessage());
+            System.err.println(" Error finding time entries by date range: " + e.getMessage());
         }
 
         return entries;
@@ -259,7 +259,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error finding time entries by user and date range: " + e.getMessage());
+            System.err.println(" Error finding time entries by user and date range: " + e.getMessage());
         }
 
         return entries;
@@ -291,13 +291,13 @@ public class TimeTrackingDao {
             int rowsUpdated = stmt.executeUpdate();
 
             if (rowsUpdated > 0) {
-                System.out.println("✓ Time entry updated successfully!");
+                System.out.println(" Time entry updated successfully!");
             } else {
-                System.out.println("⚠ No time entry found with ID: " + timeEntry.getTimeEntryId());
+                System.out.println(" No time entry found with ID: " + timeEntry.getTimeEntryId());
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error updating time entry: " + e.getMessage());
+            System.err.println(" Error updating time entry: " + e.getMessage());
         }
     }
 
@@ -320,13 +320,13 @@ public class TimeTrackingDao {
             int rowsUpdated = stmt.executeUpdate();
 
             if (rowsUpdated > 0) {
-                System.out.println("✓ Hours updated successfully!");
+                System.out.println(" Hours updated successfully!");
             } else {
-                System.out.println("⚠ No time entry found with ID: " + timeEntryId);
+                System.out.println(" No time entry found with ID: " + timeEntryId);
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error updating hours: " + e.getMessage());
+            System.err.println(" Error updating hours: " + e.getMessage());
         }
     }
 
@@ -347,13 +347,13 @@ public class TimeTrackingDao {
             int rowsDeleted = stmt.executeUpdate();
 
             if (rowsDeleted > 0) {
-                System.out.println("✓ Time entry deleted successfully!");
+                System.out.println(" Time entry deleted successfully!");
             } else {
-                System.out.println("⚠ No time entry found with ID: " + id);
+                System.out.println(" No time entry found with ID: " + id);
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error deleting time entry: " + e.getMessage());
+            System.err.println(" Error deleting time entry: " + e.getMessage());
         }
     }
 
@@ -371,10 +371,10 @@ public class TimeTrackingDao {
 
             stmt.setInt(1, taskId);
             int rowsDeleted = stmt.executeUpdate();
-            System.out.println("✓ Deleted " + rowsDeleted + " time entries for task");
+            System.out.println(" Deleted " + rowsDeleted + " time entries for task");
 
         } catch (SQLException e) {
-            System.err.println("✗ Error deleting time entries for task: " + e.getMessage());
+            System.err.println(" Error deleting time entries for task: " + e.getMessage());
         }
     }
 
@@ -392,10 +392,10 @@ public class TimeTrackingDao {
 
             stmt.setInt(1, userId);
             int rowsDeleted = stmt.executeUpdate();
-            System.out.println("✓ Deleted " + rowsDeleted + " time entries by user");
+            System.out.println(" Deleted " + rowsDeleted + " time entries by user");
 
         } catch (SQLException e) {
-            System.err.println("✗ Error deleting time entries by user: " + e.getMessage());
+            System.err.println(" Error deleting time entries by user: " + e.getMessage());
         }
     }
 
@@ -421,7 +421,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error getting total hours for task: " + e.getMessage());
+            System.err.println(" Error getting total hours for task: " + e.getMessage());
         }
         return 0.0;
     }
@@ -447,7 +447,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error getting total hours for user: " + e.getMessage());
+            System.err.println(" Error getting total hours for user: " + e.getMessage());
         }
         return 0.0;
     }
@@ -474,7 +474,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error getting total hours for user on task: " + e.getMessage());
+            System.err.println(" Error getting total hours for user on task: " + e.getMessage());
         }
         return 0.0;
     }
@@ -501,7 +501,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error getting total hours by date range: " + e.getMessage());
+            System.err.println(" Error getting total hours by date range: " + e.getMessage());
         }
         return 0.0;
     }
@@ -529,7 +529,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error getting total hours for user by date range: " + e.getMessage());
+            System.err.println(" Error getting total hours for user by date range: " + e.getMessage());
         }
         return 0.0;
     }
@@ -551,7 +551,7 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error counting time entries for task: " + e.getMessage());
+            System.err.println(" Error counting time entries for task: " + e.getMessage());
         }
         return 0;
     }
@@ -573,9 +573,8 @@ public class TimeTrackingDao {
             }
 
         } catch (SQLException e) {
-            System.err.println("✗ Error counting time entries for user: " + e.getMessage());
+            System.err.println(" Error counting time entries for user: " + e.getMessage());
         }
         return 0;
     }
 }
-
