@@ -444,7 +444,7 @@ public class TaskDao {
     }
 
     // ==================== UPDATE ====================
-    public void update(Task task) throws SQLException {
+    /*public void update(Task task) throws SQLException {
 
 
         TaskStatus newStatus = taskStatusDao.findById(task.getStatusId());
@@ -499,7 +499,69 @@ public class TaskDao {
         } catch (SQLException e) {
             System.err.println("✗ Error updating task: " + e.getMessage());
         }
-    }}
+    }}*/
+
+    public void update(Task task) {
+        String sql = """
+        UPDATE Tasks
+        SET project_id = ?,
+            task_name = ?,
+            description = ?,
+            status_id = ?,
+            priority_id = ?,
+            estimated_hours = ?,
+            due_date = ?,
+            parent_task_id = ?
+        WHERE task_id = ?
+        """;
+
+        Connection conn = null;  // ⭐ Declare outside try-with-resources
+        try {
+            conn = DatabaseConfig.getConnection();
+            conn.setAutoCommit(false);  // ⭐ DISABLE auto-commit
+
+            PreparedStatement stmt = conn.prepareStatement(sql);
+
+            stmt.setInt(1, task.getProjectId());
+            stmt.setString(2, task.getTaskName());
+            stmt.setString(3, task.getDescription());
+            stmt.setInt(4, task.getStatusId());
+            stmt.setInt(5, task.getPriorityId());
+            stmt.setObject(6, task.getEstimatedHours());
+            stmt.setObject(7, task.getDueDate() != null ? Date.valueOf(task.getDueDate()) : null);
+            stmt.setObject(8, task.getParentTaskId());
+            stmt.setInt(9, task.getTaskId());
+
+            int rowsUpdated = stmt.executeUpdate();
+
+            if (rowsUpdated > 0) {
+                conn.commit();  // ⭐ COMMIT the transaction
+                System.out.println("✓ Task updated successfully!");
+            } else {
+                conn.rollback();  // ⭐ ROLLBACK if nothing updated
+                System.out.println("⚠ No task found with ID: " + task.getTaskId());
+            }
+
+        } catch (SQLException e) {
+            System.err.println("✗ Error updating task: " + e.getMessage());
+            try {
+                if (conn != null) {
+                    conn.rollback();  // ⭐ ROLLBACK on error
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.setAutoCommit(true);  // ⭐ Reset auto-commit
+                    conn.close();  // ⭐ Close connection
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     public void updateStatus(int taskId, int newStatusId) {
         String sql = """

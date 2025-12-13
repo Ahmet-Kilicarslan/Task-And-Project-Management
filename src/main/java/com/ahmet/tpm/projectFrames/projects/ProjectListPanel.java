@@ -92,7 +92,7 @@ public class ProjectListPanel extends JPanel {
         toolbar.add(searchField);
 
         // Status filter
-        statusFilter = new JComboBox<>(new String[]{"All Status", "Planning", "Active", "Completed", "Cancelled"});
+        statusFilter = new JComboBox<>(new String[]{"All Status", "Planning", "In Progress", "Completed", "Cancelled"});
         statusFilter.setFont(StyleUtil.FONT_BODY);
         statusFilter.addActionListener(e -> filterProjects());
         statusFilter.setBackground(Color.WHITE);

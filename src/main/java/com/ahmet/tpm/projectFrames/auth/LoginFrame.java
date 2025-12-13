@@ -28,7 +28,7 @@ public class LoginFrame extends JFrame {
     }
 
     private void initializeFrame() {
-        setTitle("TaskFlow - Login");
+        setTitle("ProjectFlow - Login");
         setSize(450, 550);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
